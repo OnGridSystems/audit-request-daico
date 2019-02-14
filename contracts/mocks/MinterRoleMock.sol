@@ -1,1 +1,0 @@
-../../openzeppelin-solidity/contracts/mocks/MinterRoleMock.sol
