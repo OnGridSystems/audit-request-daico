@@ -9,5 +9,12 @@ coverage
 coverage.json
 coverageEnv
 
+# truffle build directory
+build/
+
+# Temporary directory for 0.5.x compilation
+solc-0.5
+
 # IDE config
 .idea
+
