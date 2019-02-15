@@ -1,12 +1,23 @@
 pragma solidity ^0.5.0;
 
 import "./Claimable.sol";
-import "./token/ERC20/ERC20Mintable.sol";
+import "../openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "../openzeppelin-solidity/contracts/token/ERC20/ERC20Burnable.sol";
 
 
-contract ProjectToken is Claimable, ERC20Mintable {
+contract ProjectToken is ERC20, ERC20Burnable, Claimable {
     string public name = "Project Token";
     string public symbol = "PRJ";
     uint8 public decimals = 18;
 
+    /**
+     * @dev Function to mint tokens
+     * @param to The address that will receive the minted tokens.
+     * @param value The amount of tokens to mint.
+     * @return A boolean that indicates if the operation was successful.
+     */
+    function mint(address to, uint256 value) public onlyOwner returns (bool) {
+        _mint(to, value);
+        return true;
+    }
 }

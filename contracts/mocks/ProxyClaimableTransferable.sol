@@ -4,6 +4,4 @@ import "../ProxyClaimable.sol";
 import "../ProxyTransferable.sol";
 
 
-contract Test is ProxyClaimable, ProxyTransferable {
-
-}
+contract ProxyClaimableTransferable is ProxyClaimable, ProxyTransferable { }

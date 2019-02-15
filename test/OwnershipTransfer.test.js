@@ -2,7 +2,7 @@ const { assertRevert } = require('./helpers/assertRevert');
 
 const Claimable = artifacts.require('Claimable');
 const ProxyClaimable = artifacts.require('ProxyClaimable');
-const ProxyTransferable = artifacts.require('Test');
+const ProxyTransferable = artifacts.require('ProxyClaimableTransferable');
 
 contract('ProxyContracts', function (accounts) {
   let claimable;
