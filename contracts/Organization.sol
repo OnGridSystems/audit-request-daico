@@ -19,7 +19,11 @@ interface IERC20 {
 contract Organization is Claimable {
     string public name;
     address[] public stableCoins;
+    mapping(address => bool) _isStableCoin;
     address public token;
+
+    event StableCoinAdded(address _address);
+    event StableCoinDeleted(address _address);
 
     /**
      * @dev The Organization constructor sets the name and token
@@ -30,14 +34,15 @@ contract Organization is Claimable {
         owner = _owner;
     }
 
-    function addStableCoin(address _addr) public {
+    function addStableCoin(address _addr) public onlyOwner {
         require(!isStableCoin(_addr), "Already exists");
         // ToDo check ERC-20 compliance
         stableCoins.push(_addr);
-        // ToDo add event
+        _isStableCoin[_addr] = true;
+        emit StableCoinAdded(_addr);
     }
 
-    function delStableCoin(address _addr) public {
+    function delStableCoin(address _addr) public onlyOwner {
         require(isStableCoin(_addr), "Doesn't exist");
         for (uint256 i = 0; i < stableCoins.length; i++) {
             if (stableCoins[i] == _addr) {
@@ -45,18 +50,14 @@ contract Organization is Claimable {
                     stableCoins[i] = stableCoins[stableCoins.length-1];
                 }
                 stableCoins.length--; // Implicitly recovers gas from last element storage
-                // ToDo add event
+                _isStableCoin[_addr] = false;
+                emit StableCoinDeleted(_addr);
+                break;
             }
         }
-        revert("Stablecoin not found");
     }
 
     function isStableCoin(address _addr) public view returns (bool) {
-        for (uint256 i = 0; i < stableCoins.length; i++) {
-            if (stableCoins[i] == _addr) {
-                return true;
-            }
-        }
-        return false;
+        return _isStableCoin[_addr];
     }
 }
