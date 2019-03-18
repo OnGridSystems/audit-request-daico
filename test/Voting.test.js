@@ -1,19 +1,12 @@
 const { assertRevert } = require('./helpers/assertRevert');
 const { expectEvent, time } = require('openzeppelin-test-helpers');
+const { getRLP } = require('./helpers/RLP');
 
 const Governance = artifacts.require('Governance');
 const MainToken = artifacts.require('ProjectToken');
 const Token = artifacts.require('ProjectToken');
 const Fund = artifacts.require('FundMock');
 const BadToken = artifacts.require('BadToken');
-
-function getMintRLP (address, value) {
-  const signature = '0x40c10f19'; // Signature of mint(address,uint256)
-  const adr = address.slice(2).padStart(64, '0').toString();
-  let val = value.toString(16);
-  val = '0'.repeat(64 - val.length) + val;
-  return (signature + adr + val).toLowerCase();
-}
 
 contract('Voting', function (accounts) {
   let pollhash;
@@ -64,12 +57,11 @@ contract('Voting', function (accounts) {
   describe('Mint 100 tokens to testHolder', async function () {
     beforeEach(async function () {
       const { logs } = await poll.newPoll(
-        token.address, getMintRLP(testHolder, 100), this.openingTime, this.closingTime, { from: holder1 });
+        token.address, getRLP('mint(address,uint256)', testHolder, 100), this.openingTime, this.closingTime,
+        { from: holder1 });
       pollhash = logs[0].args.pollHash;
       expectEvent.inLogs(logs, 'PollStarted');
       await time.increaseTo(this.inProgress);
-      // n = await poll.lookNow();
-      // console.log(n);
     });
 
     it('Vote failed, no quorum', async function () {
@@ -139,19 +131,20 @@ contract('Voting', function (accounts) {
   describe('Poll check', async function () {
     it('Only token holders can create voting', async function () {
       await assertRevert(poll.newPoll(
-        token.address, getMintRLP(testHolder, 100), this.openingTime, this.closingTime, { from: notHolder }));
+        token.address, getRLP('mint(address,uint256)', testHolder, 100), this.openingTime, this.closingTime,
+        { from: notHolder }));
     });
 
     it('Cant create new poll if startTime in past', async function () {
       await assertRevert(poll.newPoll(
-        token.address, getMintRLP(testHolder, 100), (await time.latest()).sub(time.duration.hours(1)),
-        this.closingTime, { from: holder1 }));
+        token.address, getRLP('mint(address,uint256)', testHolder, 100),
+        (await time.latest()).sub(time.duration.hours(1)), this.closingTime, { from: holder1 }));
     });
 
     it('Cant create new poll with null target address', async function () {
       await assertRevert(
-        poll.newPoll(emptyAddress, getMintRLP(testHolder, 100), this.openingTime, this.closingTime,
-          { from: holder1 }));
+        poll.newPoll(emptyAddress, getRLP('mint(address,uint256)', testHolder, 100), this.openingTime,
+          this.closingTime, { from: holder1 }));
     });
 
     it('Cant create new poll with transaction shorter then minimal signature', async function () {
@@ -160,7 +153,7 @@ contract('Voting', function (accounts) {
 
     it('Cant create new poll with same transaction and target contract in one block', async function () {
       const target = token.address;
-      const transaction = getMintRLP(testHolder, 200);
+      const transaction = getRLP('mint(address,uint256)', testHolder, 200);
       await poll.newPoll(target, transaction, this.openingTime, this.closingTime, { from: holder1 });
       await assertRevert(poll.newPoll(target, transaction, this.openingTime, this.closingTime, { from: holder1 }));
     });
@@ -169,7 +162,8 @@ contract('Voting', function (accounts) {
   describe('Voting check', async function () {
     beforeEach(async function () {
       const { logs } = await poll.newPoll(
-        token.address, getMintRLP(testHolder, 100), this.openingTime, this.closingTime, { from: holder1 });
+        token.address, getRLP('mint(address,uint256)', testHolder, 100), this.openingTime, this.closingTime,
+        { from: holder1 });
       pollhash2 = logs[0].args.pollHash;
       expectEvent.inLogs(logs, 'PollStarted');
     });
@@ -205,7 +199,8 @@ contract('Voting', function (accounts) {
   describe('Voting check', async function () {
     beforeEach(async function () {
       const { logs } = await poll.newPoll(
-        token.address, getMintRLP(testHolder, 100), this.openingTime, this.closingTime, { from: holder1 });
+        token.address, getRLP('mint(address,uint256)', testHolder, 100), this.openingTime, this.closingTime,
+        { from: holder1 });
       pollhash3 = logs[0].args.pollHash;
       expectEvent.inLogs(logs, 'PollStarted');
     });
@@ -237,8 +232,8 @@ contract('Voting', function (accounts) {
   describe('Fallback revert check', async function () {
     it('invalid transaction', async function () {
       const { logs } = await poll.newPoll(
-        token.address, getMintRLP(testHolder, 100).replace(4, 5), this.openingTime, this.closingTime,
-        { from: holder1 });
+        token.address, getRLP('mint(address,uint256)', testHolder, 100).replace(4, 5), this.openingTime,
+        this.closingTime, { from: holder1 });
       pollhash4 = logs[0].args.pollHash;
       expectEvent.inLogs(logs, 'PollStarted');
       await time.increaseTo(this.inProgress);
@@ -252,7 +247,7 @@ contract('Voting', function (accounts) {
     it('Fallback revert', async function () {
       const badToken = await BadToken.new();
       const { logs } = await poll.newPoll(
-        badToken.address, getMintRLP(testHolder, 100), this.openingTime, this.closingTime,
+        badToken.address, getRLP('mint(address,uint256)', testHolder, 100), this.openingTime, this.closingTime,
         { from: holder1 });
       pollhash4 = logs[0].args.pollHash;
       expectEvent.inLogs(logs, 'PollStarted');
