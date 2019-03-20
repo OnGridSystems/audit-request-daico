@@ -9,6 +9,7 @@ import "./Claimable.sol";
  */
 interface IERC20 {
     function transfer(address to, uint256 value) external returns (bool);
+    function balanceOf(address _owner) external view returns (uint256 balance);
 }
 
 
@@ -19,7 +20,7 @@ interface IERC20 {
 contract Organization is Claimable {
     string public name;
     address[] public stableCoins;
-    mapping(address => bool) _isStableCoin;
+    mapping(address => bool) private _isStableCoin;
     address public token;
 
     event StableCoinAdded(address _address);
@@ -47,7 +48,7 @@ contract Organization is Claimable {
         for (uint256 i = 0; i < stableCoins.length; i++) {
             if (stableCoins[i] == _addr) {
                 if (stableCoins.length > 1) {
-                    stableCoins[i] = stableCoins[stableCoins.length-1];
+                    stableCoins[i] = stableCoins[stableCoins.length - 1];
                 }
                 stableCoins.length--; // Implicitly recovers gas from last element storage
                 _isStableCoin[_addr] = false;
@@ -59,5 +60,13 @@ contract Organization is Claimable {
 
     function isStableCoin(address _addr) public view returns (bool) {
         return _isStableCoin[_addr];
+    }
+
+    function getStableCoinCount() public view returns (uint256) {
+        return stableCoins.length;
+    }
+
+    function getStableCoin(uint256 i) public view returns (address) {
+        return stableCoins[i];
     }
 }

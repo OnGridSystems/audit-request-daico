@@ -7,7 +7,7 @@ import "../../openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 * @dev Very simple StableCoin example
 */
 contract StableCoin is ERC20 {
-    uint8 public constant DECIMALS = 18;
+    uint8 public decimals = 18;
     string public symbol;
 
     /**
@@ -18,10 +18,15 @@ contract StableCoin is ERC20 {
         _mint(_balanceOwner, _supply);
     }
 
-    /**
-    * @dev Total number of decimals
-    */
-    function decimals() public pure returns (uint256) {
-        return DECIMALS;
+    function setDecimals(uint8 _decimals) public {
+        decimals = _decimals;
+    }
+
+    function mint(address _to, uint256 _value) public {
+        _mint(_to, _value);
+    }
+
+    function burn(address _to, uint256 _value) public {
+        _burn(_to, _value);
     }
 }
