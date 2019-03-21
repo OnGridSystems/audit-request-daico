@@ -10,7 +10,7 @@ contract('FullBehaviorTest', function ([_, deployer, owner, newOwner, newestOwne
   beforeEach(async function () {
     this.org = await Org.new('Registry', token, owner);
     this.fund = await Fund.new(this.org.address, 'Fund');
-    this.tap = await Tap.new(this.org.address, this.fund.address, deployer, 123, 'Tap');
+    this.tap = await Tap.new(owner, this.fund.address, 1, 'Tap');
   });
   it('should create crowdsale with correct parameters', async function () {
     should.exist(this.org);
