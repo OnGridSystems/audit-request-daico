@@ -39,7 +39,6 @@ contract Fund is Claimable {
     string public name;
     mapping(address => bool) public isTap;
     address[] public taps;
-    uint256 baseDecimal = 18;
 
     event TapAdded(address tap);
     event TapDeleted(address tap);
@@ -74,7 +73,7 @@ contract Fund is Claimable {
         require(org.isStableCoin(_stableCoin), "Not a stableCoin");
         IERC20 stableCoin = IERC20(_stableCoin);
         uint256 decimals = IERC20(stableCoin).decimals();
-        uint256 nDecimals = baseDecimal.sub(decimals);
+        uint256 nDecimals = uint256(18).sub(decimals);
         uint256 balance = IERC20(stableCoin).balanceOf(address(this));
         // balance to atto
         uint256 aBalance = balance.mul(10 ** nDecimals);
@@ -96,7 +95,7 @@ contract Fund is Claimable {
             address stableCoin = org.getStableCoin(i);
             uint256 balance = IERC20(stableCoin).balanceOf(address(this));
             uint256 decimals = IERC20(stableCoin).decimals();
-            uint256 nDecimals = baseDecimal.sub(decimals);
+            uint256 nDecimals = uint256(18).sub(decimals);
             totalAtto = totalAtto.add(balance.mul(10 ** nDecimals));
         }
         return totalAtto;
@@ -131,4 +130,23 @@ contract Fund is Claimable {
             }
         }
     }
+
+    /**
+    * @dev Refund stableCoins to investor.
+    * @param _stableCoin address Address of stable coin to refund.
+    * @param _to address The address which you want to transfer to.
+    * @param _amount uint256 The amount of tokens to refund
+    */
+    function refund(address _stableCoin, address _to, uint256 _amount) public onlyTap {
+        require(org.isStableCoin(_stableCoin), "Not a stableCoin");
+        IERC20 stableCoin = IERC20(_stableCoin);
+        uint256 balance = stableCoin.balanceOf(address(this));
+        require(balance >= _amount);
+        bool success = stableCoin.transfer(_to, _amount);
+        if (!success) {
+            revert("Transfer failed");
+        }
+        emit StableCoinWithdrawn(_stableCoin, _to, _amount);
+    }
+
 }

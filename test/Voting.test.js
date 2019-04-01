@@ -47,6 +47,12 @@ contract('Voting', function (accounts) {
     poll = await Governance.new(fund.address, maintoken.address);
     await token.transferOwnership(poll.address);
     await poll.proxyClaimOwnership(token.address);
+    // register contrubution
+    await poll.registerContribution(holder1, maintoken.address, 100, 100);
+    await poll.registerContribution(holder2, maintoken.address, 100, 100);
+    await poll.registerContribution(holder3, maintoken.address, 100, 100);
+    await poll.registerContribution(holder4, maintoken.address, 100, 100);
+    await poll.makeVotable();
 
     this.openingTime = (await time.latest()).add(time.duration.days(1));
     this.inProgress = this.openingTime.add(time.duration.days(1));
