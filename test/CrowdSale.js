@@ -48,6 +48,8 @@ contract('CrowdSale full behavior', function (accounts) {
       await dai.setDecimals(18);
       await org.addStableCoin(dai.address);
       cs = await CS.new(org.address, gov.address, tap.address, fund.address, webPlatformAcct);
+      await gov.transferOwnership(cs.address);
+      await cs.proxyClaimOwnership(gov.address);
     });
 
     it('check CrowdSale vars and consts', async function () {
@@ -75,10 +77,10 @@ contract('CrowdSale full behavior', function (accounts) {
     });
 
     describe('with ContributorRelay', async function () {
-      let cr, crAddr;
+      let cr;
       beforeEach(async function () {
         const { logs } = await cs.newContributorRelay(contributorAcct);
-        crAddr = logs[0].args.contributorRelay;
+        const crAddr = logs[0].args.contributorRelay;
         cr = await ContributorRelay.at(crAddr);
       });
 
@@ -88,8 +90,8 @@ contract('CrowdSale full behavior', function (accounts) {
       });
 
       it('processContribution', async function () {
-        await dai.transfer(crAddr, new BN('1000000'), { from: contributorAcct });
-        await cs.processContribution(crAddr, dai.address, new BN('1000000'));
+        await dai.transfer(cr.address, new BN('1000000'), { from: contributorAcct });
+        await cs.processContribution(cr.address, dai.address, new BN('1000000'));
       });
     });
   });

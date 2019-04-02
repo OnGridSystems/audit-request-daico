@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "./Claimable.sol";
+import "./ProxyClaimable.sol";
 import "./Governance.sol";
 import "../openzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -81,7 +82,7 @@ contract ContributorRelay {
 *
 * @dev The contract which receives stablecoin-contributions and mints tokens
 */
-contract CrowdSale is Claimable {
+contract CrowdSale is ProxyClaimable {
     using SafeMath for uint256;
 
     // We convert all USD values to aUSD (attoUSD)
@@ -152,8 +153,8 @@ contract CrowdSale is Claimable {
         // ToDo mint tokens
         // Register contribution in Governance contract
         address contributorAcct = _contributorRelay.contributorAcct();
-        // bool result = gov.registerContribution(contributorAcct, _stcAddr, _stcAmount, tokens);
-        return true;
+        bool result = gov.registerContribution(contributorAcct, _stcAddr, _stcAmount, tokens);
+        return result;
     }
 
     /**

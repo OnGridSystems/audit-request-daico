@@ -5,10 +5,9 @@ import "../openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./Claimable.sol";
 import "./IFund.sol";
 
-contract Governance {
+contract Governance is Claimable {
     using SafeMath for uint256;
 
-    address public owner;
     IFund public fund;
     IERC20 public token;
     address public refundTap;
@@ -130,11 +129,12 @@ contract Governance {
     * @param tokens uint256 Tokens amount
     */
     function registerContribution(address contributorAcc, address stc, uint256 stcAmount, uint256 tokens) public
-    onlyOwner {
+    onlyOwner returns (bool) {
         contributions[contributorAcc][stc].stableCoinAmount =
         contributions[contributorAcc][stc].stableCoinAmount.add(stcAmount);
         contributions[contributorAcc][stc].tokenAmount = contributions[contributorAcc][stc].tokenAmount.add(tokens);
         voterBalance[contributorAcc] = voterBalance[contributorAcc].add(tokens);
+        return true;
     }
 
     /**
