@@ -125,6 +125,14 @@ contract CrowdSale is Claimable, ProxyClaimable {
     }
 
     /**
+    * @dev set Backend account address.
+    * @param _webPlatformAcct address Address to be set as Backend account address.
+    */
+    function setWebPlatformAcct(address _webPlatformAcct) public onlyOwner {
+        webPlatformAcct = _webPlatformAcct;
+    }
+
+    /**
     * @dev creates personal ContributorRelay contract for individual contributor
     * @param _contributorAcct address of desired Token.
     * @return bool operation result.
@@ -142,6 +150,7 @@ contract CrowdSale is Claimable, ProxyClaimable {
     */
     function processContribution(ContributorRelay _contributorRelay, address _stcAddr, uint256 _stcAmount) 
     public returns (bool) {
+        require(msg.sender == webPlatformAcct || msg.sender == _contributorRelay.contributorAcct());
         // ToDo check _stcAddr is in allowed stablecoins
         // ToDo check _stcAmount != 0
         // ToDo check _stcAmount is available on _contributorRelay's balance

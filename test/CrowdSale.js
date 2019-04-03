@@ -1,4 +1,4 @@
-// const { assertRevert, shouldFail } = require('./helpers/assertRevert');
+const { assertRevert } = require('./helpers/assertRevert');
 const { BN, constants } = require('openzeppelin-test-helpers');
 const { ZERO_ADDRESS } = constants;
 
@@ -28,6 +28,10 @@ contract('ContributorRelay isolated', function (accounts) {
     it('check ContributorRelay functions', async function () {
       await cr.returnStcToContributor(dai.address, new BN('1000'), { from: contributorAcct });
     });
+
+    it('returnStcToContributor can call only from investor account', async function () {
+      await assertRevert(cr.returnStcToContributor(dai.address, new BN('1000')));
+    });
   });
 });
 
@@ -35,6 +39,7 @@ contract('CrowdSale full behavior', function (accounts) {
   const webPlatformAcct = accounts[1];
   const admin = accounts[0];
   const contributorAcct = accounts[2];
+  const newWebPlatformAcct = accounts[3];
   describe('with contracts stack', async function () {
     let dai, fund, token, org, cs, tap, gov;
     beforeEach(async function () {
@@ -116,7 +121,45 @@ contract('CrowdSale full behavior', function (accounts) {
 
       it('processContribution', async function () {
         await dai.transfer(cr.address, new BN('1000000'), { from: contributorAcct });
-        await cs.processContribution(cr.address, dai.address, new BN('1000000'));
+        await cs.processContribution(cr.address, dai.address, new BN('1000000'), { from: webPlatformAcct });
+      });
+    });
+
+    describe('processContribution checks', async function () {
+      let cr1;
+      beforeEach(async function () {
+        const { logs } = await cs.newContributorRelay(contributorAcct);
+        const crAddr = logs[0].args.contributorRelay;
+        cr1 = await ContributorRelay.at(crAddr);
+      });
+      it('Backend account can call processContribution', async function () {
+        await dai.transfer(cr1.address, new BN('1000000'), { from: contributorAcct });
+        await cs.processContribution(cr1.address, dai.address, new BN('1000000'), { from: webPlatformAcct });
+      });
+      it('Investor can call processContribution from his account', async function () {
+        await dai.transfer(cr1.address, new BN('1000000'), { from: contributorAcct });
+        await cs.processContribution(cr1.address, dai.address, new BN('1000000'), { from: contributorAcct });
+      });
+      it('Anyone else cant call processContribution', async function () {
+        await dai.transfer(cr1.address, new BN('1000000'), { from: contributorAcct });
+        await assertRevert(cs.processContribution(cr1.address, dai.address, new BN('1000000'), { from: admin }));
+      });
+    });
+
+    describe('setWebPlatformAcct checks', async function () {
+      it('Owner can call setWebPlatformAcct', async function () {
+        let owner = await cs.webPlatformAcct();
+        assert(owner, webPlatformAcct);
+        await cs.setWebPlatformAcct(newWebPlatformAcct, { from: admin });
+        owner = await cs.webPlatformAcct();
+        assert(owner, newWebPlatformAcct);
+      });
+      it('Anyone else cant call setWebPlatformAcct', async function () {
+        let owner = await cs.webPlatformAcct();
+        assert(owner, webPlatformAcct);
+        await assertRevert(cs.setWebPlatformAcct(newWebPlatformAcct, { from: contributorAcct }));
+        owner = await cs.webPlatformAcct();
+        assert(owner, webPlatformAcct);
       });
     });
   });
