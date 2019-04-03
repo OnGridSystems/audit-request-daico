@@ -44,6 +44,13 @@ contract('StableCoin Voting', function (accounts) {
     poll = await Governance.new(fund.address, maintoken.address);
     await token.transferOwnership(poll.address);
     await poll.proxyClaimOwnership(token.address);
+    // register contribution
+    await poll.registerContribution(holder1, maintoken.address, 100, 100);
+    await poll.registerContribution(holder2, maintoken.address, 100, 100);
+    await poll.registerContribution(holder3, maintoken.address, 100, 100);
+    await poll.registerContribution(holder4, maintoken.address, 100, 100);
+    await poll.makeVotable();
+
     stablecoin1 = await Token.new();
     stablecoin2 = await Token.new();
     organisation = await Organization.new('TestOrganisation', maintoken.address, poll.address);
