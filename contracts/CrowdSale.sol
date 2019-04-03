@@ -82,7 +82,7 @@ contract ContributorRelay {
 *
 * @dev The contract which receives stablecoin-contributions and mints tokens
 */
-contract CrowdSale is ProxyClaimable {
+contract CrowdSale is Claimable, ProxyClaimable {
     using SafeMath for uint256;
 
     // We convert all USD values to aUSD (attoUSD)
@@ -160,7 +160,7 @@ contract CrowdSale is ProxyClaimable {
     /**
     * @dev Finishes configuration and starts the CrowdSale
     */
-    function start() public pure {
+    function start() public pure { // solhint-disable-line no-empty-blocks
 
     }
 
@@ -168,8 +168,8 @@ contract CrowdSale is ProxyClaimable {
     * @dev Prematurely finish the CrowdSale. 
     * The CrowdSale contract will be finally destroyed
     */
-    function finish() public pure {
-        
+    function finish() public pure { // solhint-disable-line no-empty-blocks
+
     }
 
     /**
@@ -177,7 +177,7 @@ contract CrowdSale is ProxyClaimable {
     * It made public intentionally to make state transition autonomous
     * (anybody can try to initiate it from any account)
     */
-    function tryToSwitchState() public pure {
+    function tryToSwitchState() public pure { // solhint-disable-line no-empty-blocks
 
     }
 
@@ -185,6 +185,7 @@ contract CrowdSale is ProxyClaimable {
     * @dev Convert given amount of specific Stablecoin uinits to attoUsd (10e-18 USD)
     * Since stablecoins have different decimals, the USD price of minimal unit is different
     */
+    // solhint-disable-next-line no-unused-vars
     function convertStcAmountToAUsd(address _stcAddr, uint256 _stcAmount) public pure returns (uint256) {
         // ToDo check _stcAddr in allowed stablecoins otherwise revert
         // get decimals from stablecoin.decimals() public getter

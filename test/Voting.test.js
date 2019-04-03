@@ -17,8 +17,6 @@ contract('Voting', function (accounts) {
   let fund;
   let token;
   let poll;
-  let newToken;
-  let newPoll;
   const holder1 = accounts[1];
   const holder2 = accounts[2];
   const holder3 = accounts[3];
@@ -263,16 +261,6 @@ contract('Voting', function (accounts) {
       await poll.vote(pollhash4, true, { from: holder3 });
       await time.increaseTo(this.afterClosingTime);
       await assertRevert(poll.tryToFinalize(pollhash4, { from: holder1 }));
-    });
-  });
-  describe('Ownership check', async function () {
-    beforeEach(async function () {
-      newToken = await Token.new();
-      newPoll = await Governance.new(fund.address, maintoken.address);
-      await newToken.transferOwnership(newPoll.address);
-    });
-    it('Only owner can call proxyClaimOwnership', async function () {
-      await assertRevert(newPoll.proxyClaimOwnership(newToken.address, { from: notHolder }));
     });
   });
 });
