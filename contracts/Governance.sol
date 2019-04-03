@@ -63,7 +63,6 @@ contract Governance is Claimable {
 
     modifier onlyFundHolder() {
         require(voterBalance[msg.sender] > 0);
-//        require(fund.balanceOf(msg.sender) > 0);
         _;
     }
 
@@ -71,7 +70,7 @@ contract Governance is Claimable {
     * @dev Call claimOwnership of another contract.
     * @param _contractAddr The address of contract who must claim ownership.
     */
-    function proxyClaimOwnership(address _contractAddr) external onlyOwner {
+    function proxyClaimOwnership(address _contractAddr) external {
         Claimable instance = Claimable(_contractAddr);
         instance.claimOwnership();
     }
