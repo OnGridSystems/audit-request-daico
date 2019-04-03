@@ -73,7 +73,32 @@ contract('CrowdSale full behavior', function (accounts) {
       await cs.finish();
       await cs.tryToSwitchState();
       await cs.convertStcAmountToAUsd(dai.address, new BN(1000000));
-      await cs.calculateTokensByAUsdContribution(new BN(0));
+    });
+    it('check bonus calculator', async function () {
+      (await cs.calculateTokensByAUsdContribution(new BN(499999)))
+        .should.be.bignumber.equal(new BN(499999));
+      (await cs.calculateTokensByAUsdContribution(new BN(500000)))
+        .should.be.bignumber.equal(new BN(525000));
+      (await cs.calculateTokensByAUsdContribution(new BN(1000001)))
+        .should.be.bignumber.equal(new BN(1100001));
+      (await cs.calculateTokensByAUsdContribution(new BN(2000001)))
+        .should.be.bignumber.equal(new BN(2300001));
+      (await cs.calculateTokensByAUsdContribution(new BN(3000001)))
+        .should.be.bignumber.equal(new BN(3600001));
+      (await cs.calculateTokensByAUsdContribution(new BN(4000001)))
+        .should.be.bignumber.equal(new BN(5000001));
+      (await cs.calculateTokensByAUsdContribution(new BN(5000001)))
+        .should.be.bignumber.equal(new BN(6500001));
+      (await cs.calculateTokensByAUsdContribution(new BN(6000001)))
+        .should.be.bignumber.equal(new BN(8100001));
+      (await cs.calculateTokensByAUsdContribution(new BN(7000001)))
+        .should.be.bignumber.equal(new BN(9800001));
+      (await cs.calculateTokensByAUsdContribution(new BN(8000001)))
+        .should.be.bignumber.equal(new BN(11600001));
+      (await cs.calculateTokensByAUsdContribution(new BN(9000001)))
+        .should.be.bignumber.equal(new BN(13500001));
+      (await cs.calculateTokensByAUsdContribution(new BN(10000001)))
+        .should.be.bignumber.equal(new BN(15000001));
     });
 
     describe('with ContributorRelay', async function () {

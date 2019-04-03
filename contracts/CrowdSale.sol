@@ -196,9 +196,43 @@ contract CrowdSale is ProxyClaimable {
     * @dev Calculate token amount (in minimal units of the token) for given 
     * contribution in attoUSD (10e-18 USD)
     */
-    function calculateTokensByAUsdContribution(uint256 _aUsdAmount) public pure returns (uint256) {
-        // ToDo implement
-        return _aUsdAmount;
+    // solhint-disable-next-line code-complexity
+    function calculateTokensByAUsdContribution(uint256 aUsdAmount)
+    public
+    pure
+    returns (uint256)
+    {
+        if (aUsdAmount < 500000) {
+            return aUsdAmount;
+        }
+        if (aUsdAmount <= 1000000) {
+            return aUsdAmount.add(aUsdAmount.mul(5).div(100));
+        }
+        if (aUsdAmount <= 2000000) {
+            return aUsdAmount.add(aUsdAmount.mul(10).div(100));
+        }
+        if (aUsdAmount <= 3000000) {
+            return aUsdAmount.add(aUsdAmount.mul(15).div(100));
+        }
+        if (aUsdAmount <= 4000000) {
+            return aUsdAmount.add(aUsdAmount.mul(20).div(100));
+        }
+        if (aUsdAmount <= 5000000) {
+            return aUsdAmount.add(aUsdAmount.mul(25).div(100));
+        }
+        if (aUsdAmount <= 6000000) {
+            return aUsdAmount.add(aUsdAmount.mul(30).div(100));
+        }
+        if (aUsdAmount <= 7000000) {
+            return aUsdAmount.add(aUsdAmount.mul(35).div(100));
+        }
+        if (aUsdAmount <= 8000000) {
+            return aUsdAmount.add(aUsdAmount.mul(40).div(100));
+        }
+        if (aUsdAmount <= 9000000) {
+            return aUsdAmount.add(aUsdAmount.mul(45).div(100));
+        }
+        return aUsdAmount.add(aUsdAmount.mul(50).div(100));
     }
 
 }
