@@ -65,7 +65,8 @@ contract CrowdSale is Claimable, ProxyClaimable {
 
     // We convert all USD values to aUSD (attoUSD)
     // to achieve highest accuracy operating with different stablecoins
-    uint256 constant public USD = 10 ** 18;
+    uint256 constant public AUSD_DECIMALS = 18;
+    uint256 constant public USD = 10 ** AUSD_DECIMALS;
     uint256 constant public SOFTCAP_AUSD = 3000000 * USD; // 3M USD
     uint256 constant public SOFTCAP_DEADLINE = 1999999999; // ToDo need clarification
     uint256 constant public HARDCAP_AUSD = 10000000 * USD; // 10M USD
@@ -139,7 +140,6 @@ contract CrowdSale is Claimable, ProxyClaimable {
         require(_stcAmount >= MIN_CONTRIB);
         require(ERC20Detailed(_stcAddr).balanceOf(address(_contributorRelay))
                 >= _stcAmount);
-        // ToDo Convert stablecoin to aUSD value
         uint256 aUsdAmount = convertStcAmountToAUsd(_stcAddr, _stcAmount);
         uint256 tokens = calculateTokensByAUsdContribution(aUsdAmount);
         // ToDo mint tokens
@@ -177,12 +177,14 @@ contract CrowdSale is Claimable, ProxyClaimable {
     * @dev Convert given amount of specific Stablecoin uinits to attoUsd (10e-18 USD)
     * Since stablecoins have different decimals, the USD price of minimal unit is different
     */
-    // solhint-disable-next-line no-unused-vars
-    function convertStcAmountToAUsd(address _stcAddr, uint256 _stcAmount) public pure returns (uint256) {
-        // ToDo check _stcAddr in allowed stablecoins otherwise revert
-        // get decimals from stablecoin.decimals() public getter
-        // multiply by 10 ** remainingDecimals and return
-        return _stcAmount;
+    function convertStcAmountToAUsd(
+        address _stcAddr,
+        uint256 _stcAmount
+    ) public view returns (uint256) {
+        uint8 decimals = ERC20Detailed(_stcAddr).decimals();
+        uint256 remainingDecimals = uint256(AUSD_DECIMALS).sub(decimals);
+        uint256 multiplier = 10 ** remainingDecimals;
+        return _stcAmount.mul(multiplier);
     }
 
     /**

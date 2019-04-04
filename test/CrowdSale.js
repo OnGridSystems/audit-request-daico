@@ -41,7 +41,7 @@ contract('CrowdSale full behavior', function (accounts) {
   const contributorAcct = accounts[2];
   const newWebPlatformAcct = accounts[3];
   describe('with contracts stack', async function () {
-    let dai, fund, token, org, cs, tap, gov;
+    let dai, usdc, fund, token, org, cs, tap, gov;
     beforeEach(async function () {
       token = await Token.new();
       org = await Organization.new('TestOrganisation', token.address, admin);
@@ -51,6 +51,8 @@ contract('CrowdSale full behavior', function (accounts) {
       gov = await Gov.new(fund.address, token.address); // ToDo change after Gov refactoring
       dai = await StableCoin.new(contributorAcct, new BN('1000000'), 'DAI');
       await dai.setDecimals(18);
+      usdc = await StableCoin.new(contributorAcct, new BN('1000000'), 'USDC');
+      await usdc.setDecimals(6);
       await org.addStableCoin(dai.address);
       cs = await CS.new(org.address, gov.address, tap.address, fund.address, webPlatformAcct);
       await gov.transferOwnership(cs.address);
@@ -78,6 +80,12 @@ contract('CrowdSale full behavior', function (accounts) {
       await cs.finish();
       await cs.tryToSwitchState();
       await cs.convertStcAmountToAUsd(dai.address, new BN(1000000));
+    });
+    it('check stablecoin convertor', async function () {
+      (await cs.convertStcAmountToAUsd(dai.address, new BN('100000')))
+        .should.be.bignumber.equal(new BN('100000'));
+      (await cs.convertStcAmountToAUsd(usdc.address, new BN('100000')))
+        .should.be.bignumber.equal(new BN('100000000000000000'));
     });
     it('check bonus calculator', async function () {
       const USD = new BN('1000000000000000000');
