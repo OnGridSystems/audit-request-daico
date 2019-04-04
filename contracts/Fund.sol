@@ -1,7 +1,8 @@
 pragma solidity ^0.5.0;
 
-import "./Claimable.sol";
+import "../openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "../openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./Claimable.sol";
 
 /**
 * @title Organization interface
@@ -14,17 +15,6 @@ interface IOrg {
     function getStableCoin(uint256 i) external view returns (address);
 }
 
-/**
- * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
- */
-contract IERC20 {
-    uint8 public decimals;
-
-    function transfer(address to, uint256 value) external returns (bool);
-
-    function balanceOf(address _owner) external view returns (uint256 balance);
-}
 
 /**
 * @title Fund
@@ -71,10 +61,10 @@ contract Fund is Claimable {
     */
     function withdrawStableCoin(address _stableCoin, address _to, uint256 _value) public onlyTap returns (bool) {
         require(org.isStableCoin(_stableCoin), "Not a stableCoin");
-        IERC20 stableCoin = IERC20(_stableCoin);
-        uint256 decimals = IERC20(stableCoin).decimals();
+        ERC20Detailed stableCoin = ERC20Detailed(_stableCoin);
+        uint256 decimals = ERC20Detailed(stableCoin).decimals();
         uint256 nDecimals = uint256(18).sub(decimals);
-        uint256 balance = IERC20(stableCoin).balanceOf(address(this));
+        uint256 balance = ERC20Detailed(stableCoin).balanceOf(address(this));
         // balance to atto
         uint256 aBalance = balance.mul(10 ** nDecimals);
         require(aBalance >= _value);
@@ -93,8 +83,8 @@ contract Fund is Claimable {
         uint256 totalAtto;
         for (uint256 i = 0; i < org.getStableCoinCount(); i++) {
             address stableCoin = org.getStableCoin(i);
-            uint256 balance = IERC20(stableCoin).balanceOf(address(this));
-            uint256 decimals = IERC20(stableCoin).decimals();
+            uint256 balance = ERC20Detailed(stableCoin).balanceOf(address(this));
+            uint256 decimals = ERC20Detailed(stableCoin).decimals();
             uint256 nDecimals = uint256(18).sub(decimals);
             totalAtto = totalAtto.add(balance.mul(10 ** nDecimals));
         }
@@ -139,7 +129,7 @@ contract Fund is Claimable {
     */
     function refund(address _stableCoin, address _to, uint256 _amount) public onlyTap {
         require(org.isStableCoin(_stableCoin), "Not a stableCoin");
-        IERC20 stableCoin = IERC20(_stableCoin);
+        ERC20Detailed stableCoin = ERC20Detailed(_stableCoin);
         uint256 balance = stableCoin.balanceOf(address(this));
         require(balance >= _amount);
         bool success = stableCoin.transfer(_to, _amount);

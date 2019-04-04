@@ -1,9 +1,10 @@
 pragma solidity ^0.5.0;
 
+import "../openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
+import "../openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./Claimable.sol";
 import "./ProxyClaimable.sol";
 import "./Governance.sol";
-import "../openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**
@@ -20,34 +21,11 @@ interface IOrg {
 }
 
 
-// ToDo check best practices interface vs abstract contract
-/**
- * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
- */
- /* ToDo already declared in Governance, uncomment
-contract IERC20 {
-    uint8 public decimals;
-
-    function transfer(address to, uint256 value) external returns (bool);
-
-    function balanceOf(address _owner) external view returns (uint256 balance);
-}
-*/
-
-/**
- * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
- */
-contract IERC20Mintable is IERC20 {
-    function mint(address _to, uint256 _value) public;
-}
-
 /**
  * @title CrowdSale interface
  * @dev CrowdSale interface
  */
-contract ICrowdSale is IERC20 {
+contract ICrowdSale {
     address public stcFund;
 }
 
@@ -61,7 +39,7 @@ contract ContributorRelay {
     }
 
     // ToDo check best practice on arg types (address vs specific iface)
-    function relayStcToFund(IERC20 _stableCoin, uint256 amount)
+    function relayStcToFund(ERC20Detailed _stableCoin, uint256 amount)
     public
     {
         require(msg.sender == crowdSaleCtct, "Call only from CrowdSale account");
@@ -69,7 +47,7 @@ contract ContributorRelay {
         _stableCoin.transfer(ICrowdSale(crowdSaleCtct).stcFund(), amount);
     }
 
-    function returnStcToContributor(IERC20 _stableCoin, uint256 amount)
+    function returnStcToContributor(ERC20Detailed _stableCoin, uint256 amount)
     public
     {
         require(msg.sender == contributorAcct, "Call only from contributorAcct account");
@@ -159,7 +137,7 @@ contract CrowdSale is Claimable, ProxyClaimable {
         require(msg.sender == webPlatformAcct || msg.sender == _contributorRelay.contributorAcct());
         require(org.isStableCoin(_stcAddr), "Not a stablecoin");
         require(_stcAmount >= MIN_CONTRIB);
-        require(IERC20(_stcAddr).balanceOf(address(_contributorRelay))
+        require(ERC20Detailed(_stcAddr).balanceOf(address(_contributorRelay))
                 >= _stcAmount);
         // ToDo Convert stablecoin to aUSD value
         uint256 aUsdAmount = convertStcAmountToAUsd(_stcAddr, _stcAmount);

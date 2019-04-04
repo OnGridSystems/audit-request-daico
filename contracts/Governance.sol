@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "../openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "./Claimable.sol";
 import "./IFund.sol";
 
@@ -9,7 +9,7 @@ contract Governance is Claimable {
     using SafeMath for uint256;
 
     IFund public fund;
-    IERC20 public token;
+    ERC20Detailed public token;
     address public refundTap;
 
     enum State {Waiting, Votable, Refunding}
@@ -48,7 +48,7 @@ contract Governance is Claimable {
     constructor(address _fund, address _token) public {
         owner = msg.sender;
         fund = IFund(_fund);
-        token = IERC20(_token);
+        token = ERC20Detailed(_token);
     }
 
     modifier onlyOwner() {
