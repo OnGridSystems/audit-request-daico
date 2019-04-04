@@ -92,7 +92,8 @@ contract CrowdSale is Claimable, ProxyClaimable {
     uint256 constant public SOFTCAP_DEADLINE = 1999999999; // ToDo need clarification
     uint256 constant public HARDCAP_AUSD = 10000000 * USD; // 10M USD
     uint256 constant public HARDCAP_DEADLINE = 1999999999; // ToDo need clarification
-    uint256 constant public MIN_CONTRIB_AUSD = 100000 * USD; // 100K USD
+    uint256 constant public MIN_CONTRIB = 100000;
+    uint256 constant public MIN_CONTRIB_AUSD = MIN_CONTRIB * USD; // 100K USD
     // amount of raised funds (the sum of all contributed stablecoins)
     uint256 public raisedAUsd;
     bool public softCapReached; // true if softCap reached
@@ -149,15 +150,18 @@ contract CrowdSale is Claimable, ProxyClaimable {
     * @param _stcAddr address of stablecoin contract to withdraw
     * @param _stcAmount amount of stablecoins to withdraw in minimal fraction units
     */
-    function processContribution(ContributorRelay _contributorRelay, address _stcAddr, uint256 _stcAmount) 
+    function processContribution(
+        ContributorRelay _contributorRelay,
+        address _stcAddr,
+        uint256 _stcAmount
+    )
     public returns (bool) {
         require(msg.sender == webPlatformAcct || msg.sender == _contributorRelay.contributorAcct());
-        // ToDo check _stcAddr is in allowed stablecoins
-        // ToDo check _stcAmount != 0
-        // ToDo check _stcAmount is available on _contributorRelay's balance
+        require(org.isStableCoin(_stcAddr), "Not a stablecoin");
+        require(_stcAmount >= MIN_CONTRIB);
+        require(IERC20(_stcAddr).balanceOf(address(_contributorRelay))
+                >= _stcAmount);
         // ToDo Convert stablecoin to aUSD value
-        // ToDo aUsdAmount = convertStcAmountToAUsd(_stcAddr, _stcAmount)
-        // ToDo calculate tokens = calculateTokensByAUsdContribution(_aUsdAmount)
         uint256 aUsdAmount = convertStcAmountToAUsd(_stcAddr, _stcAmount);
         uint256 tokens = calculateTokensByAUsdContribution(aUsdAmount);
         // ToDo mint tokens

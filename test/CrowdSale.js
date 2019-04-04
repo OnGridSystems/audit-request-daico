@@ -157,6 +157,51 @@ contract('CrowdSale full behavior', function (accounts) {
         await dai.transfer(cr1.address, new BN('1000000'), { from: contributorAcct });
         await assertRevert(cs.processContribution(cr1.address, dai.address, new BN('1000000'), { from: admin }));
       });
+      it('Cant process not a stablecoin', async function () {
+        await dai.transfer(
+          cr1.address,
+          new BN('1000000'),
+          { from: contributorAcct }
+        );
+        await assertRevert(
+          cs.processContribution(
+            cr1.address,
+            ZERO_ADDRESS,
+            new BN('1000000'),
+            { from: webPlatformAcct }
+          )
+        );
+      });
+      it('Cant process amount less than 100000', async function () {
+        await dai.transfer(
+          cr1.address,
+          new BN('99999'),
+          { from: contributorAcct }
+        );
+        await assertRevert(
+          cs.processContribution(
+            cr1.address,
+            dai.address,
+            new BN('99999'),
+            { from: webPlatformAcct }
+          )
+        );
+      });
+      it('Balance is less than trying to process', async function () {
+        await dai.transfer(
+          cr1.address,
+          new BN('99999'),
+          { from: contributorAcct }
+        );
+        await assertRevert(
+          cs.processContribution(
+            cr1.address,
+            dai.address,
+            new BN('100000'),
+            { from: webPlatformAcct }
+          )
+        );
+      });
     });
 
     describe('setWebPlatformAcct checks', async function () {
