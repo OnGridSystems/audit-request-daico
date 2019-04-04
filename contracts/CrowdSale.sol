@@ -87,11 +87,12 @@ contract CrowdSale is Claimable, ProxyClaimable {
 
     // We convert all USD values to aUSD (attoUSD)
     // to achieve highest accuracy operating with different stablecoins
-    uint256 constant public SOFTCAP_AUSD = 3000000 * 10 ** 18; // 3M USD
+    uint256 constant public USD = 10 ** 18;
+    uint256 constant public SOFTCAP_AUSD = 3000000 * USD; // 3M USD
     uint256 constant public SOFTCAP_DEADLINE = 1999999999; // ToDo need clarification
-    uint256 constant public HARDCAP_AUSD = 10000000 * 10 ** 18; // 10M USD
+    uint256 constant public HARDCAP_AUSD = 10000000 * USD; // 10M USD
     uint256 constant public HARDCAP_DEADLINE = 1999999999; // ToDo need clarification
-    uint256 constant public MIN_CONTRIB_AUSD = 100000 * 10 ** 18; // 100K USD
+    uint256 constant public MIN_CONTRIB_AUSD = 100000 * USD; // 100K USD
     // amount of raised funds (the sum of all contributed stablecoins)
     uint256 public raisedAUsd;
     bool public softCapReached; // true if softCap reached
@@ -212,34 +213,34 @@ contract CrowdSale is Claimable, ProxyClaimable {
     pure
     returns (uint256)
     {
-        if (aUsdAmount < 500000) {
+        if (aUsdAmount < 500000 * USD) {
             return aUsdAmount;
         }
-        if (aUsdAmount <= 1000000) {
+        if (aUsdAmount <= 1000000 * USD) {
             return aUsdAmount.add(aUsdAmount.mul(5).div(100));
         }
-        if (aUsdAmount <= 2000000) {
+        if (aUsdAmount <= 2000000 * USD) {
             return aUsdAmount.add(aUsdAmount.mul(10).div(100));
         }
-        if (aUsdAmount <= 3000000) {
+        if (aUsdAmount <= 3000000 * USD) {
             return aUsdAmount.add(aUsdAmount.mul(15).div(100));
         }
-        if (aUsdAmount <= 4000000) {
+        if (aUsdAmount <= 4000000 * USD) {
             return aUsdAmount.add(aUsdAmount.mul(20).div(100));
         }
-        if (aUsdAmount <= 5000000) {
+        if (aUsdAmount <= 5000000 * USD) {
             return aUsdAmount.add(aUsdAmount.mul(25).div(100));
         }
-        if (aUsdAmount <= 6000000) {
+        if (aUsdAmount <= 6000000 * USD) {
             return aUsdAmount.add(aUsdAmount.mul(30).div(100));
         }
-        if (aUsdAmount <= 7000000) {
+        if (aUsdAmount <= 7000000 * USD) {
             return aUsdAmount.add(aUsdAmount.mul(35).div(100));
         }
-        if (aUsdAmount <= 8000000) {
+        if (aUsdAmount <= 8000000 * USD) {
             return aUsdAmount.add(aUsdAmount.mul(40).div(100));
         }
-        if (aUsdAmount <= 9000000) {
+        if (aUsdAmount <= 9000000 * USD) {
             return aUsdAmount.add(aUsdAmount.mul(45).div(100));
         }
         return aUsdAmount.add(aUsdAmount.mul(50).div(100));
