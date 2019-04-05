@@ -1,5 +1,5 @@
 const { assertRevert } = require('./helpers/assertRevert');
-const { expectEvent, time } = require('openzeppelin-test-helpers');
+const { expectEvent, time, BN } = require('openzeppelin-test-helpers');
 const { getRLP } = require('./helpers/RLP');
 
 const Organization = artifacts.require('Organization');
@@ -19,6 +19,7 @@ contract('Governance States', function (accounts) {
   const notOwner = accounts[9];
   const holder1 = accounts[1];
   const holder2 = accounts[2];
+  const stablebox = accounts[3];
 
   before(async function () {
     // Advance to the next block to correctly read time in the solidity "now" function interpreted by ganache
@@ -88,23 +89,36 @@ contract('Governance States', function (accounts) {
   });
 
   it('Cant withdraw tokens when in Waiting state', async function () {
-    await assertRevert(governance.withdrawToken(50, { from: holder1 }));
+    await assertRevert(
+      governance.withdrawToken(holder1, 50, { from: holder1 })
+    );
   });
 
   it('Cant withdraw tokens when in Refunding state', async function () {
-    await assertRevert(governance.withdrawToken(50, { from: holder1 }));
+    await assertRevert(
+      governance.withdrawToken(holder1, 50, { from: holder1 })
+    );
   });
 
   it('Can withdraw tokens when in Votable state', async function () {
     await governance.makeVotable();
-    await governance.withdrawToken(50, { from: holder1 });
+    await governance.withdrawToken(holder1, 50, { from: holder1 });
     const balance = await token.balanceOf(holder1);
     assert.equal(balance, 50);
   });
 
+  it('Withdraw tokens in Votable state to other account', async function () {
+    (await token.balanceOf(stablebox)).should.be.bignumber.equal(new BN('0'));
+    await governance.makeVotable();
+    await governance.withdrawToken(stablebox, 50, { from: holder1 });
+    (await token.balanceOf(stablebox)).should.be.bignumber.equal(new BN('50'));
+  });
+
   it('Cant exceeds your virtual balance when withdraw', async function () {
     await governance.makeVotable();
-    await assertRevert(governance.withdrawToken(101, { from: holder1 }));
+    await assertRevert(
+      governance.withdrawToken(holder1, 101, { from: holder1 })
+    );
   });
 
   it('Cant refund your StableCoins when in Waiting state', async function () {
@@ -140,7 +154,9 @@ contract('Governance States', function (accounts) {
     await organization.addStableCoin(stablecoin1.address);
     await governance.registerContribution(holder1, stablecoin1.address, 100, 100);
     await governance.makeVotable();
-    await assertRevert(governance.withdrawToken(50, { from: holder1 }));
+    await assertRevert(
+      governance.withdrawToken(holder1, 50, { from: holder1 })
+    );
   });
 
   it('Revert if StableCoin not in list', async function () {

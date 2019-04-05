@@ -110,11 +110,11 @@ contract Governance is Claimable {
     * @dev withdraw tokens from Governance balance to investor personal account and decrease his voting power.this
     * @param amount uint256 Amount of tokens to withdraw.
     */
-    function withdrawToken(uint256 amount) public {
+    function withdrawToken(address _to, uint256 amount) public {
         require(state == State.Votable);
         require(voterBalance[msg.sender] >= amount);
         voterBalance[msg.sender] = voterBalance[msg.sender].sub(amount);
-        bool success = token.transfer(msg.sender, amount);
+        bool success = token.transfer(_to, amount);
         if (!success) {
             revert("Transfer failed");
         }
