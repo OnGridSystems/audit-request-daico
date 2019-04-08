@@ -18,20 +18,20 @@ module.exports = function (deployer, network, accounts) {
             return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'DAI').then(dai => {
               dai.setDecimals(18);
               org.addStableCoin(dai.address);
-			        return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'USDC').then(usdc => {
-				        usdc.setDecimals(6);
-				        org.addStableCoin(usdc.address);
-				        return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'USDT').then(usdt => {
-					        usdt.setDecimals(6);
-					        org.addStableCoin(usdt.address);	
-					        return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'TUSD').then(tusd => {
-						        tusd.setDecimals(18);
+              return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'USDC').then(usdc => {
+                usdc.setDecimals(6);
+                org.addStableCoin(usdc.address);
+                return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'USDT').then(usdt => {
+                  usdt.setDecimals(6);
+                  org.addStableCoin(usdt.address);
+                  return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'TUSD').then(tusd => {
+                    tusd.setDecimals(18);
                     org.addStableCoin(tusd.address);
-                    return deployer.deploy(CS, org.address, gov.address, tap.address,
-                      fund.address, admin).then(cs => {
-                        gov.transferOwnership(cs.address);
-                        cs.proxyClaimOwnership(gov.address);
-                        return cs;
+                    return deployer.deploy(CS, org.address, gov.address, tap.address, fund.address,
+                      admin).then(cs => {
+                      gov.transferOwnership(cs.address);
+                      cs.proxyClaimOwnership(gov.address);
+                      return cs;
                     });
                   });
                 });
