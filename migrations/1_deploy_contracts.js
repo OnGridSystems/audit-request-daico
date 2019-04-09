@@ -47,6 +47,7 @@ function development (deployer, network, accounts) {
 
 function rinkeby (deployer, network) {
   const config = require('../deploy-config.json').rinkeby;
+  const fs = require('fs');
   const admin = config.adminAcct;
   const webPlatformAcct = config.webPlatformAcct;
   const descOrganistaion = config.Organisation;
@@ -66,6 +67,22 @@ function rinkeby (deployer, network) {
               webPlatformAcct).then(cs => {
               gov.transferOwnership(cs.address);
               cs.proxyClaimOwnership(gov.address);
+              const contractsAddress = {
+                admin: admin,
+                web: webPlatformAcct,
+                token: token.address,
+                org: org.address,
+                fund: fund.address,
+                gov: gov.address,
+                tap: tap.address,
+                cs: cs.address,
+              };
+              console.log('** CONTRACTS BEGIN **');
+              console.log(contractsAddress);
+              console.log('** CONTRACTS END **');
+              fs.writeFile('./build/RinkebyContractsAddress.json',
+                JSON.stringify(contractsAddress),
+                function (err) { if (err) throw err; });
               return cs;
             });
           });
