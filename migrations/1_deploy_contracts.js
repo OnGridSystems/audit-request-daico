@@ -6,7 +6,7 @@ const Token = artifacts.require('ProjectToken');
 const Gov = artifacts.require('Governance');
 const CS = artifacts.require('CrowdSale');
 
-module.exports = function (deployer, network, accounts) {
+function development (deployer, network, accounts) {
   const admin = accounts[0];
   const stableCoinHolder = accounts[1];
   const webPlatformAcct = accounts[2];
@@ -43,4 +43,42 @@ module.exports = function (deployer, network, accounts) {
       });
     });
   });
+}
+
+function rinkeby (deployer, network) {
+  const config = require('../deploy-config.json').rinkeby;
+  const admin = config.adminAcct;
+  const webPlatformAcct = config.webPlatformAcct;
+  const descOrganistaion = config.Organisation;
+  const descFund = config.Fund;
+  const descTap = config.Tap;
+  const tapRate = config.TapRate;
+  const stableCoins = config.StableCoins;
+  return deployer.deploy(Token).then(token => {
+    return deployer.deploy(Organization, descOrganistaion, token.address, admin).then(org => {
+      return deployer.deploy(Fund, Organization.address, descFund).then(fund => {
+        return deployer.deploy(Gov, fund.address, Token.address).then(gov => {
+          for (const coin in stableCoins) {
+            org.addStableCoin(stableCoins[coin]);
+          }
+          return deployer.deploy(Tap, gov.address, fund.address, tapRate, descTap).then(tap => {
+            return deployer.deploy(CS, org.address, gov.address, tap.address, fund.address,
+              webPlatformAcct).then(cs => {
+              gov.transferOwnership(cs.address);
+              cs.proxyClaimOwnership(gov.address);
+              return cs;
+            });
+          });
+        });
+      });
+    });
+  });
+}
+
+module.exports = function (deployer, network, accounts) {
+  if (network === 'development') {
+    return development(deployer, network, accounts);
+  } else if (network === 'rinkeby') {
+    return rinkeby(deployer, network);
+  }
 };

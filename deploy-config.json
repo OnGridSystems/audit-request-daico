@@ -1,0 +1,16 @@
+{
+    "rinkeby":{
+        "adminAcct" : "0x94e3361495bD110114ac0b6e35Ed75E77E6a6cFA",
+        "webPlatformAcct" : "0xB0d070485a1bfb782A5B1B9F095A48CCF20F11A6",
+        "Organisation" : "Organisation name",
+        "Fund" : "Fund name",
+        "Tap" : "Tap name",
+        "TapRate": 154320987654320,
+        "StableCoins" :{
+            "DAI": "0xb740445F3e022B4786cBb2feDCE490ef5aa26F0B",
+            "USDC": "0x8846d23ce0AeB6Cd13e6Cb84998160ef783022FB",
+            "USDT": "0xEE9E5862160c519E60bb2ec9C667a8E8a6F2289b",
+            "TUSD": "0x9b43376C9d63e6B1Cf9D71852B51641642ED9466"
+        }
+    }
+}
