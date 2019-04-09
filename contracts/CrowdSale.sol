@@ -8,6 +8,14 @@ import "./Governance.sol";
 
 
 /**
+ * @title IERC20 mintable interface
+ */
+interface IERC20Mintable {
+    function mint(address to, uint256 value) external returns (bool);
+}
+
+
+/**
 * @title Organization interface
 */
 interface IOrg {
@@ -142,7 +150,9 @@ contract CrowdSale is Claimable, ProxyClaimable {
                 >= _stcAmount);
         uint256 aUsdAmount = convertStcAmountToAUsd(_stcAddr, _stcAmount);
         uint256 tokens = calculateTokensByAUsdContribution(aUsdAmount);
-        // ToDo mint tokens
+        IERC20Mintable token = IERC20Mintable(org.token());
+        token.mint(address(gov), tokens);
+        _contributorRelay.relayStcToFund(ERC20Detailed(_stcAddr), _stcAmount);
         // Register contribution in Governance contract
         address contributorAcct = _contributorRelay.contributorAcct();
         bool result = gov.registerContribution(contributorAcct, _stcAddr, _stcAmount, tokens);
