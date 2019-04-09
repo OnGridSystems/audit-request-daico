@@ -9,6 +9,7 @@ const CS = artifacts.require('CrowdSale');
 module.exports = function (deployer, network, accounts) {
   const admin = accounts[0];
   const stableCoinHolder = accounts[1];
+  const webPlatformAcct = accounts[2];
 
   return deployer.deploy(Token).then(token => {
     return deployer.deploy(Organization, 'TestOrganisation', token.address, admin).then(org => {
@@ -28,7 +29,7 @@ module.exports = function (deployer, network, accounts) {
                     tusd.setDecimals(18);
                     org.addStableCoin(tusd.address);
                     return deployer.deploy(CS, org.address, gov.address, tap.address, fund.address,
-                      admin).then(cs => {
+                      webPlatformAcct).then(cs => {
                       gov.transferOwnership(cs.address);
                       cs.proxyClaimOwnership(gov.address);
                       return cs;
