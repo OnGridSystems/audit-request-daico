@@ -11,37 +11,44 @@ function development (deployer, network, accounts) {
   const stableCoinHolder = accounts[1];
   const webPlatformAcct = accounts[2];
 
-  return deployer.deploy(Token).then(token => {
-    return deployer.deploy(Organization, 'TestOrganisation', token.address, admin).then(org => {
-      return deployer.deploy(Fund, Organization.address, 'TestFund').then(fund => {
-        return deployer.deploy(Gov, fund.address, Token.address).then(gov => {
-          return deployer.deploy(Tap, gov.address, fund.address, 154320987654320, 'TestTap').then(tap => {
-            return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'DAI').then(dai => {
-              dai.setDecimals(18);
-              org.addStableCoin(dai.address);
-              return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'USDC').then(usdc => {
-                usdc.setDecimals(6);
-                org.addStableCoin(usdc.address);
-                return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'USDT').then(usdt => {
-                  usdt.setDecimals(6);
-                  org.addStableCoin(usdt.address);
-                  return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'TUSD').then(tusd => {
-                    tusd.setDecimals(18);
-                    org.addStableCoin(tusd.address);
-                    return deployer.deploy(CS, org.address, gov.address, tap.address, fund.address,
-                      webPlatformAcct).then(cs => {
-                      gov.transferOwnership(cs.address);
-                      cs.proxyClaimOwnership(gov.address);
-                      return cs;
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
-    });
+  return deployer.then(function () {
+    return deployer.deploy(Token);
+  }).then(function (token) {
+    this.token = token;
+    return deployer.deploy(Organization, 'TestOrganisation', token.address, admin);
+  }).then(function (org) {
+    this.org = org;
+    return deployer.deploy(Fund, org.address, 'TestFund');
+  }).then(function (fund) {
+    this.fund = fund;
+    return deployer.deploy(Gov, fund.address, Token.address);
+  }).then(function (gov) {
+    this.gov = gov;
+    return deployer.deploy(Tap, this.gov.address, this.fund.address, 154320987654320, 'TestTap');
+  }).then(function (tap) {
+    this.tap = tap;
+    return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'DAI');
+  }).then(function (dai) {
+    dai.setDecimals(18);
+    this.org.addStableCoin(dai.address);
+    return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'USDC');
+  }).then(function (usdc) {
+    usdc.setDecimals(6);
+    this.org.addStableCoin(usdc.address);
+    return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'USDT');
+  }).then(function (usdt) {
+    usdt.setDecimals(6);
+    this.org.addStableCoin(usdt.address);
+    return deployer.deploy(StableCoin, stableCoinHolder, 1000000, 'TUSD');
+  }).then(function (tusd) {
+    tusd.setDecimals(18);
+    this.org.addStableCoin(tusd.address);
+    return deployer.deploy(CS, this.org.address, this.gov.address, this.tap.address,
+      this.fund.address, webPlatformAcct);
+  }).then(function (cs) {
+    this.gov.transferOwnership(cs.address);
+    cs.proxyClaimOwnership(this.gov.address);
+    return cs;
   });
 }
 
@@ -55,40 +62,48 @@ function rinkeby (deployer, network) {
   const descTap = config.Tap;
   const tapRate = config.TapRate;
   const stableCoins = config.StableCoins;
-  return deployer.deploy(Token).then(token => {
-    return deployer.deploy(Organization, descOrganistaion, token.address, admin).then(org => {
-      return deployer.deploy(Fund, Organization.address, descFund).then(fund => {
-        return deployer.deploy(Gov, fund.address, Token.address).then(gov => {
-          for (const coin in stableCoins) {
-            org.addStableCoin(stableCoins[coin]);
-          }
-          return deployer.deploy(Tap, gov.address, fund.address, tapRate, descTap).then(tap => {
-            return deployer.deploy(CS, org.address, gov.address, tap.address, fund.address,
-              webPlatformAcct).then(cs => {
-              gov.transferOwnership(cs.address);
-              cs.proxyClaimOwnership(gov.address);
-              const contractsAddress = {
-                admin: admin,
-                web: webPlatformAcct,
-                token: token.address,
-                org: org.address,
-                fund: fund.address,
-                gov: gov.address,
-                tap: tap.address,
-                cs: cs.address,
-              };
-              console.log('** CONTRACTS BEGIN **');
-              console.log(contractsAddress);
-              console.log('** CONTRACTS END **');
-              fs.writeFile('./build/RinkebyContractsAddress.json',
-                JSON.stringify(contractsAddress),
-                function (err) { if (err) throw err; });
-              return cs;
-            });
-          });
-        });
-      });
-    });
+
+  return deployer.then(function () {
+    return deployer.deploy(Token);
+  }).then(function (token) {
+    this.token = token;
+    return deployer.deploy(Organization, descOrganistaion, token.address, admin);
+  }).then(function (org) {
+    this.org = org;
+    for (const coin in stableCoins) {
+      org.addStableCoin(stableCoins[coin]);
+    }
+    return deployer.deploy(Fund, org.address, descFund);
+  }).then(function (fund) {
+    this.fund = fund;
+    return deployer.deploy(Gov, fund.address, Token.address);
+  }).then(function (gov) {
+    this.gov = gov;
+    return deployer.deploy(Tap, this.gov.address, this.fund.address, tapRate, descTap);
+  }).then(function (tap) {
+    this.tap = tap;
+    return deployer.deploy(CS, this.org.address, this.gov.address, this.tap.address,
+      this.fund.address, webPlatformAcct);
+  }).then(function (cs) {
+    this.gov.transferOwnership(cs.address);
+    cs.proxyClaimOwnership(this.gov.address);
+    const contractsAddress = {
+      admin: admin,
+      web: webPlatformAcct,
+      token: this.token.address,
+      org: this.org.address,
+      fund: this.fund.address,
+      gov: this.gov.address,
+      tap: this.tap.address,
+      cs: cs.address,
+    };
+    console.log('** CONTRACTS BEGIN **');
+    console.log(contractsAddress);
+    console.log('** CONTRACTS END **');
+    fs.writeFile('./build/RinkebyContractsAddress.json',
+      JSON.stringify(contractsAddress),
+      function (err) { if (err) throw err; });
+    return cs;
   });
 }
 
