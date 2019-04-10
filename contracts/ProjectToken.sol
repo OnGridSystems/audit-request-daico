@@ -8,7 +8,7 @@ import "../openzeppelin-solidity/contracts/token/ERC20/ERC20Burnable.sol";
 contract ProjectToken is ERC20, ERC20Burnable, Claimable {
     string public name = "Project Token";
     string public symbol = "PRJ";
-    uint8 public decimals = 18;
+    uint8 public decimals = 8;
 
     /**
      * @dev Function to mint tokens
