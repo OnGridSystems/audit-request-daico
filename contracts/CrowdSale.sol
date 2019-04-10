@@ -8,16 +8,25 @@ import "./Governance.sol";
 
 
 /**
+ * @title IERC20 mintable interface
+ */
+interface IERC20Mintable {
+    function mint(address to, uint256 value) external returns (bool);
+}
+
+
+/**
 * @title Organization interface
 */
 interface IOrg {
-    function token() external returns (address);
 
     function isStableCoin(address _stableCoin) external returns (bool);
 
     function getStableCoinCount() external view returns (uint256);
 
     function getStableCoin(uint256 i) external view returns (address);
+
+    function token() external view returns (address);
 }
 
 
@@ -142,7 +151,9 @@ contract CrowdSale is Claimable, ProxyClaimable {
                 >= _stcAmount);
         uint256 aUsdAmount = convertStcAmountToAUsd(_stcAddr, _stcAmount);
         uint256 tokens = calculateTokensByAUsdContribution(aUsdAmount);
-        // ToDo mint tokens
+        IERC20Mintable token = IERC20Mintable(org.token());
+        token.mint(address(gov), tokens);
+        _contributorRelay.relayStcToFund(ERC20Detailed(_stcAddr), _stcAmount);
         // Register contribution in Governance contract
         address contributorAcct = _contributorRelay.contributorAcct();
         bool result = gov.registerContribution(contributorAcct, _stcAddr, _stcAmount, tokens);
@@ -194,40 +205,44 @@ contract CrowdSale is Claimable, ProxyClaimable {
     // solhint-disable-next-line code-complexity
     function calculateTokensByAUsdContribution(uint256 aUsdAmount)
     public
-    pure
+    view
     returns (uint256)
     {
+        // ToDo change to interface
+        uint256 tokenDecimals = ERC20Detailed(org.token()).decimals();
+        uint256 decDivider = 10 ** (18 - tokenDecimals);
+        uint256 baseTokens = aUsdAmount.mul(20).div(decDivider);
         if (aUsdAmount < 500000 * USD) {
-            return aUsdAmount;
+            return baseTokens;
         }
-        if (aUsdAmount <= 1000000 * USD) {
-            return aUsdAmount.add(aUsdAmount.mul(5).div(100));
+        if (aUsdAmount < 1000000 * USD) {
+            return baseTokens.add(baseTokens.mul(5).div(100));
         }
-        if (aUsdAmount <= 2000000 * USD) {
-            return aUsdAmount.add(aUsdAmount.mul(10).div(100));
+        if (aUsdAmount < 2000000 * USD) {
+            return baseTokens.add(baseTokens.mul(10).div(100));
         }
-        if (aUsdAmount <= 3000000 * USD) {
-            return aUsdAmount.add(aUsdAmount.mul(15).div(100));
+        if (aUsdAmount < 3000000 * USD) {
+            return baseTokens.add(baseTokens.mul(15).div(100));
         }
-        if (aUsdAmount <= 4000000 * USD) {
-            return aUsdAmount.add(aUsdAmount.mul(20).div(100));
+        if (aUsdAmount < 4000000 * USD) {
+            return baseTokens.add(baseTokens.mul(20).div(100));
         }
-        if (aUsdAmount <= 5000000 * USD) {
-            return aUsdAmount.add(aUsdAmount.mul(25).div(100));
+        if (aUsdAmount < 5000000 * USD) {
+            return baseTokens.add(baseTokens.mul(25).div(100));
         }
-        if (aUsdAmount <= 6000000 * USD) {
-            return aUsdAmount.add(aUsdAmount.mul(30).div(100));
+        if (aUsdAmount < 6000000 * USD) {
+            return baseTokens.add(baseTokens.mul(30).div(100));
         }
-        if (aUsdAmount <= 7000000 * USD) {
-            return aUsdAmount.add(aUsdAmount.mul(35).div(100));
+        if (aUsdAmount < 7000000 * USD) {
+            return baseTokens.add(baseTokens.mul(35).div(100));
         }
-        if (aUsdAmount <= 8000000 * USD) {
-            return aUsdAmount.add(aUsdAmount.mul(40).div(100));
+        if (aUsdAmount < 8000000 * USD) {
+            return baseTokens.add(baseTokens.mul(40).div(100));
         }
-        if (aUsdAmount <= 9000000 * USD) {
-            return aUsdAmount.add(aUsdAmount.mul(45).div(100));
+        if (aUsdAmount < 9000000 * USD) {
+            return baseTokens.add(baseTokens.mul(45).div(100));
         }
-        return aUsdAmount.add(aUsdAmount.mul(50).div(100));
+        return baseTokens.add(baseTokens.mul(50).div(100));
     }
 
 }

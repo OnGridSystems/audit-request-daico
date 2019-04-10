@@ -1,6 +1,8 @@
 const { assertRevert } = require('./helpers/assertRevert');
 const { BN, constants } = require('openzeppelin-test-helpers');
 const { ZERO_ADDRESS } = constants;
+const USD = new BN('1000000000000000000');
+const TKN = new BN('100000000');
 
 const Tap = artifacts.require('Tap');
 const Fund = artifacts.require('Fund');
@@ -49,7 +51,7 @@ contract('CrowdSale full behavior', function (accounts) {
       // ToDo the first arg of tap should be spender = gov
       tap = await Tap.new(ZERO_ADDRESS, fund.address, new BN(0), 'SpendingTap');
       gov = await Gov.new(fund.address, token.address); // ToDo change after Gov refactoring
-      dai = await StableCoin.new(contributorAcct, new BN('1000000'), 'DAI');
+      dai = await StableCoin.new(contributorAcct, (new BN('100000')).mul(USD), 'DAI');
       await dai.setDecimals(18);
       usdc = await StableCoin.new(contributorAcct, new BN('1000000'), 'USDC');
       await usdc.setDecimals(6);
@@ -57,6 +59,8 @@ contract('CrowdSale full behavior', function (accounts) {
       cs = await CS.new(org.address, gov.address, tap.address, fund.address, webPlatformAcct);
       await gov.transferOwnership(cs.address);
       await cs.proxyClaimOwnership(gov.address);
+      await token.transferOwnership(cs.address);
+      await cs.proxyClaimOwnership(token.address);
     });
 
     it('check CrowdSale vars and consts', async function () {
@@ -88,43 +92,48 @@ contract('CrowdSale full behavior', function (accounts) {
         .should.be.bignumber.equal(new BN('100000000000000000'));
     });
     it('check bonus calculator', async function () {
-      const USD = new BN('1000000000000000000');
+      (await cs.calculateTokensByAUsdContribution(
+        new BN('100000').mul(USD))).should.be.bignumber.equal(
+        new BN('2000000').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
         new BN('499999').mul(USD))).should.be.bignumber.equal(
-        new BN('499999000000000000000000'));
+        new BN('9999980').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
         new BN('500000').mul(USD))).should.be.bignumber.equal(
-        new BN('525000000000000000000000'));
+        new BN('10500000').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
-        new BN('1000001').mul(USD))).should.be.bignumber.equal(
-        new BN('1100001100000000000000000'));
+        new BN('999999').mul(USD))).should.be.bignumber.equal(
+        new BN('20999979').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
-        new BN('2000001').mul(USD))).should.be.bignumber.equal(
-        new BN('2300001150000000000000000'));
+        new BN('1000000').mul(USD))).should.be.bignumber.equal(
+        new BN('22000000').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
-        new BN('3000001').mul(USD))).should.be.bignumber.equal(
-        new BN('3600001200000000000000000'));
+        new BN('2000000').mul(USD))).should.be.bignumber.equal(
+        new BN('46000000').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
-        new BN('4000001').mul(USD))).should.be.bignumber.equal(
-        new BN('5000001250000000000000000'));
+        new BN('3000000').mul(USD))).should.be.bignumber.equal(
+        new BN('72000000').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
-        new BN('5000001').mul(USD))).should.be.bignumber.equal(
-        new BN('6500001300000000000000000'));
+        new BN('4000000').mul(USD))).should.be.bignumber.equal(
+        new BN('100000000').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
-        new BN('6000001').mul(USD))).should.be.bignumber.equal(
-        new BN('8100001350000000000000000'));
+        new BN('5000000').mul(USD))).should.be.bignumber.equal(
+        new BN('130000000').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
-        new BN('7000001').mul(USD))).should.be.bignumber.equal(
-        new BN('9800001400000000000000000'));
+        new BN('6000000').mul(USD))).should.be.bignumber.equal(
+        new BN('162000000').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
-        new BN('8000001').mul(USD))).should.be.bignumber.equal(
-        new BN('11600001450000000000000000'));
+        new BN('7000000').mul(USD))).should.be.bignumber.equal(
+        new BN('196000000').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
-        new BN('9000001').mul(USD))).should.be.bignumber.equal(
-        new BN('13500001500000000000000000'));
+        new BN('8000000').mul(USD))).should.be.bignumber.equal(
+        new BN('232000000').mul(TKN));
       (await cs.calculateTokensByAUsdContribution(
-        new BN('10000001').mul(USD))).should.be.bignumber.equal(
-        new BN('15000001500000000000000000'));
+        new BN('9000000').mul(USD))).should.be.bignumber.equal(
+        new BN('270000000').mul(TKN));
+      (await cs.calculateTokensByAUsdContribution(
+        new BN('10000000').mul(USD))).should.be.bignumber.equal(
+        new BN('300000000').mul(TKN));
     });
 
     describe('with ContributorRelay', async function () {
@@ -141,8 +150,17 @@ contract('CrowdSale full behavior', function (accounts) {
       });
 
       it('processContribution', async function () {
-        await dai.transfer(cr.address, new BN('1000000'), { from: contributorAcct });
-        await cs.processContribution(cr.address, dai.address, new BN('1000000'), { from: webPlatformAcct });
+        await dai.transfer(cr.address, (new BN('100000')).mul(USD), { from: contributorAcct });
+        await cs.processContribution(cr.address, dai.address, (new BN('100000')).mul(USD), { from: webPlatformAcct });
+        // ToDo add events checks
+        (await gov.voterBalance(contributorAcct)).should.be.bignumber.equal((new BN('2000000')).mul(TKN));
+        (await gov.contributions(contributorAcct, dai.address)).tokenAmount
+          .should.be.bignumber.equal((new BN('2000000')).mul(TKN));
+        (await gov.contributions(contributorAcct, dai.address)).stableCoinAmount
+          .should.be.bignumber.equal((new BN('100000')).mul(USD));
+        (await token.balanceOf(gov.address)).should.be.bignumber.equal((new BN('2000000')).mul(TKN));
+        (await dai.balanceOf(cr.address)).should.be.bignumber.equal(new BN('0'));
+        (await dai.balanceOf(fund.address)).should.be.bignumber.equal((new BN('100000')).mul(USD));
       });
     });
 
