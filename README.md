@@ -43,6 +43,14 @@ Example: the participants of DAO could decide to undertake unplanned investment 
 ### Claimable ownership
 The one-way ownership transfer is a common and widely used pattern but it lacks a safety mechanism for accidental transferring of the ownership to the wrong address. To ensure that we will never accidentally move the ownership of a vital long-lifespan contract to the wrong address we use the 2-way `transferOwnership` / `claimOwnership` mechanism that was very nicely provided in [v1.12.0@OpenZeppelin](https://github.com/OpenZeppelin/openzeppelin-solidity/blob/0e65947efbffc592cffea8c2ae9d3b8e11659854/contracts/ownership/Claimable.sol), was removed in v2, see [openzeppelin-solidity#1488](https://github.com/OpenZeppelin/openzeppelin-solidity/issues/1488).
 
+# Deploy on the network
+The contracts can be deployed on the live network with with truffle migrations.
+On rinkeby testnet:
+```sh
+npm install
+npx truffle migrate --network rinkeby --reset --compile-all
+```
+
 # Authors
 
 * [Kirill Varlamov](https://github.com/ongrid), OnGrid Systems ([github](https://github.com/OnGridSystems), [site](https://ongrid.pro))
