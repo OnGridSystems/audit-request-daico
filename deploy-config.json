@@ -1,16 +1,30 @@
 {
     "rinkeby":{
-        "adminAcct" : "0x94e3361495bD110114ac0b6e35Ed75E77E6a6cFA",
-        "webPlatformAcct" : "0xB0d070485a1bfb782A5B1B9F095A48CCF20F11A6",
+        "adminAcct" : "0x7b509c4BF9a7D97E95A822EE122D969B54D6c74E",
+        "webPlatformAcct" : "0xB938D3B98EBF0eCdE6EA8E4Bb69fCB5b41B8FFED",
         "Organisation" : "Organisation name",
         "Fund" : "Fund name",
         "Tap" : "Tap name",
         "TapRate": 154320987654320,
         "StableCoins" :{
-            "DAI": "0xb740445F3e022B4786cBb2feDCE490ef5aa26F0B",
-            "USDC": "0x8846d23ce0AeB6Cd13e6Cb84998160ef783022FB",
-            "USDT": "0xEE9E5862160c519E60bb2ec9C667a8E8a6F2289b",
-            "TUSD": "0x9b43376C9d63e6B1Cf9D71852B51641642ED9466"
+            "DAI": "0xb92E80EaBCeA34E9435E59de2137C9b48a0f7e9C",
+            "USDC": "0x2b56fcb73EFb7E5a757E39f7383B3A03eD53D0BA",
+            "USDT": "0xbF71D033C1e4a575A979A8E77Eb89afba0C5a856",
+            "TUSD": "0xf7Df0d258bE446E5e93e66641dd4E99571F02e3b"
+        }
+    },
+    "ropsten":{
+        "adminAcct" : "0x7b509c4BF9a7D97E95A822EE122D969B54D6c74E",
+        "webPlatformAcct" : "0xB938D3B98EBF0eCdE6EA8E4Bb69fCB5b41B8FFED",
+        "Organisation" : "Organisation name",
+        "Fund" : "Fund name",
+        "Tap" : "Tap name",
+        "TapRate": 154320987654320,
+        "StableCoins" :{
+            "DAI": "0xDeadBeefDeadBeefDeadBeefDeadBeefDeadBee0",
+            "USDC": "0xDeadBeefDeadBeefDeadBeefDeadBeefDeadBee1",
+            "USDT": "0xDeadBeefDeadBeefDeadBeefDeadBeefDeadBee2",
+            "TUSD": "0xDeadBeefDeadBeefDeadBeefDeadBeefDeadBee3"
         }
     }
 }
