@@ -44,6 +44,7 @@ contract Governance is Claimable {
 
     event PollStarted(bytes32 pollHash);
     event PollFinished(bytes32 pollHash, bool result);
+    event NewContribution(address indexed contributorAcc, uint256 tokens);
 
     constructor(address _fund, address _token) public {
         owner = msg.sender;
@@ -133,6 +134,7 @@ contract Governance is Claimable {
         contributions[contributorAcc][stc].stableCoinAmount.add(stcAmount);
         contributions[contributorAcc][stc].tokenAmount = contributions[contributorAcc][stc].tokenAmount.add(tokens);
         voterBalance[contributorAcc] = voterBalance[contributorAcc].add(tokens);
+        emit NewContribution(contributorAcc, tokens);
         return true;
     }
 
