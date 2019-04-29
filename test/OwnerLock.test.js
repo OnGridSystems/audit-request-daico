@@ -5,7 +5,7 @@ const Fund = artifacts.require('Fund');
 const Organization = artifacts.require('Organization');
 const StableCoin = artifacts.require('StableCoin');
 const Token = artifacts.require('ProjectToken');
-const Gov = artifacts.require('Governance'); // ToDo change to Governance after impl
+const Gov = artifacts.require('Governance');
 const CS = artifacts.require('CrowdSale');
 const ContributorRelay = artifacts.require('ContributorRelay');
 
@@ -39,8 +39,7 @@ contract('CrowdSale full behavior', function (accounts) {
       token = await Token.new();
       org = await Organization.new('TestOrganisation', token.address, admin);
       fund = await Fund.new(org.address, 'TestFund');
-      // ToDo the first arg of tap should be spender = gov
-      gov = await Gov.new(fund.address, token.address); // ToDo change after Gov refactoring
+      gov = await Gov.new(fund.address, token.address);
       dai = await StableCoin.new(contributorAcct, new BN('1000000'), 'DAI');
       await dai.setDecimals(18);
       await org.addStableCoin(dai.address);

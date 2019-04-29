@@ -8,7 +8,7 @@ const Fund = artifacts.require('Fund');
 const Organization = artifacts.require('Organization');
 const StableCoin = artifacts.require('StableCoin');
 const Token = artifacts.require('ProjectToken');
-const Gov = artifacts.require('Governance'); // ToDo change to Governance after impl
+const Gov = artifacts.require('Governance');
 const CS = artifacts.require('CrowdSale');
 const ContributorRelay = artifacts.require('ContributorRelay');
 const CrowdSaleStateMock = artifacts.require('CrowdSaleStateMock');
@@ -49,8 +49,7 @@ contract('CrowdSale full behavior', function (accounts) {
       token = await Token.new();
       org = await Organization.new('TestOrganisation', token.address, admin);
       fund = await Fund.new(org.address, 'TestFund');
-      // ToDo the first arg of tap should be spender = gov
-      gov = await Gov.new(fund.address, token.address); // ToDo change after Gov refactoring
+      gov = await Gov.new(fund.address, token.address);
       dai = await StableCoin.new(contributorAcct, (new BN('100000')).mul(USD), 'DAI');
       await dai.setDecimals(18);
       usdc = await StableCoin.new(contributorAcct, new BN('1000000'), 'USDC');
@@ -152,7 +151,6 @@ contract('CrowdSale full behavior', function (accounts) {
       it('processContribution', async function () {
         await dai.transfer(cr.address, (new BN('100000')).mul(USD), { from: contributorAcct });
         await cs.processContribution(cr.address, dai.address, (new BN('100000')).mul(USD), { from: webPlatformAcct });
-        // ToDo add events checks
         (await gov.voterBalance(contributorAcct)).should.be.bignumber.equal((new BN('2000000')).mul(TKN));
         (await gov.contributions(contributorAcct, dai.address)).tokenAmount
           .should.be.bignumber.equal((new BN('2000000')).mul(TKN));
@@ -257,7 +255,6 @@ contract('CrowdSale and Governance Automata', function (accounts) {
   const csPreSoftCap = new BN('1');
   const csPostSoftCap = new BN('2');
   const csGovContribution = new BN('0');
-  // const csGovRefunding = new BN('1'); ToDo test refunding
   const csGovVotable = new BN('2');
   // form the mutual ownership relation (Crowdsale owns Governance)
   beforeEach(async function () {
@@ -291,7 +288,6 @@ contract('CrowdSale and Governance Automata', function (accounts) {
     it('newContributorRelay shouldn\'t work', async function () {
       await assertRevert(cs.newContributorRelay(accounts[8]));
     });
-    // ToDo processContribution shouldn\'t work
     it('should be startable', async function () {
       await cs.start();
       (await cs.state()).should.be.bignumber.equal(csPreSoftCap);
@@ -314,9 +310,6 @@ contract('CrowdSale and Governance Automata', function (accounts) {
     it('setWebPlatformAcct should revert', async function () {
       await assertRevert(cs.setWebPlatformAcct(accounts[8]));
     });
-    // ToDo newContributorRelay should work
-    // ToDo processContribution should work
-    // ToDo ReachSoftCap
     it('shouldn\'t be startable', async function () {
       await assertRevert(cs.start());
     });
@@ -336,10 +329,8 @@ contract('CrowdSale and Governance Automata', function (accounts) {
         await cs.tryToSwitchState();
         (await cs.state()).should.be.bignumber.equal(csPostSoftCap);
         (await gov.state()).should.be.bignumber.equal(csGovVotable);
-        // ToDo (await cs.owner()).should.equal(gov.address); fixme DAICO-174
       });
     });
-    // ToDo add deadline reach tests
   });
   // PostSoftCap: Crowdsale is operational and accepts contributions, softCap
   // has been reached
@@ -351,9 +342,6 @@ contract('CrowdSale and Governance Automata', function (accounts) {
     it('setWebPlatformAcct should revert', async function () {
       await assertRevert(cs.setWebPlatformAcct(accounts[8]));
     });
-    // ToDo newContributorRelay should work
-    // ToDo processContribution should work
-    // ToDo ReachHardCap
     it('shouldn\'t be startable', async function () {
       await assertRevert(cs.start());
     });
@@ -371,9 +359,6 @@ contract('CrowdSale and Governance Automata', function (accounts) {
       });
       it('tryToSwitchState should suicide', async function () {
         await cs.tryToSwitchState();
-        // ToDo Test Crowdsale was selfdestructed
-        // ToDo add ownership checks
-        // ToDo add governance checks
       });
     });
   });

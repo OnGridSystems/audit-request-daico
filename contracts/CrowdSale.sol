@@ -47,12 +47,10 @@ contract ContributorRelay {
         contributorAcct = _contributorAcct;
     }
 
-    // ToDo check best practice on arg types (address vs specific iface)
     function relayStcToFund(ERC20Detailed _stableCoin, uint256 amount)
     public
     {
         require(msg.sender == crowdSaleCtct, "Call only from CrowdSale account");
-        // ToDo what happens if transfer fails
         _stableCoin.transfer(ICrowdSale(crowdSaleCtct).stcFund(), amount);
     }
 
@@ -77,9 +75,9 @@ contract CrowdSale is Claimable, ProxyClaimable {
     uint256 constant public AUSD_DECIMALS = 18;
     uint256 constant public USD = 10 ** AUSD_DECIMALS;
     uint256 constant public SOFTCAP_AUSD = 3000000 * USD; // 3M USD
-    uint256 constant public SOFTCAP_DEADLINE = 1999999999; // ToDo need clarification
+    uint256 constant public SOFTCAP_DEADLINE = 1999999999;
     uint256 constant public HARDCAP_AUSD = 10000000 * USD; // 10M USD
-    uint256 constant public HARDCAP_DEADLINE = 2999999999; // ToDo need clarification
+    uint256 constant public HARDCAP_DEADLINE = 2999999999;
     uint256 constant public MIN_CONTRIB = 100000;
     uint256 constant public MIN_CONTRIB_AUSD = MIN_CONTRIB * USD; // 100K USD
     // amount of raised funds (the sum of all contributed stablecoins)
@@ -93,7 +91,7 @@ contract CrowdSale is Claimable, ProxyClaimable {
     address public webPlatformAcct; 
     // Organization contract keeps the token address and the list of allowed stablecoins
     IOrg public org;
-    Governance public gov; // ToDo change to iface
+    Governance public gov;
     //Fund collecting contributor's stablecoins on its balance
     address public stcFund;
     // The tap connected to stcFund. Used in Refunding process
@@ -158,7 +156,6 @@ contract CrowdSale is Claimable, ProxyClaimable {
         // Register contribution in Governance contract
         address contributorAcct = _contributorRelay.contributorAcct();
         bool result = gov.registerContribution(contributorAcct, _stcAddr, _stcAmount, tokens);
-        // ToDo tryToSwitchState
         return result;
     }
 
@@ -188,27 +185,19 @@ contract CrowdSale is Claimable, ProxyClaimable {
     function tryToSwitchState() public {
         require(state != State.Init);
         if (raisedAUsd >= HARDCAP_AUSD || now >= HARDCAP_DEADLINE) {
-            // HardCap reached.
-            // ToDo transfer token
-            // Todo finalize governance (withdrawals tokens from governance will be possible)
             transferOwnership(address(gov));
-            gov.proxyClaimOwnership(address(this)); // Todo maybe claimOwnership from gov?
+            gov.proxyClaimOwnership(address(this));
             gov.makeVotable();
             selfdestruct(msg.sender);
         }
         if (raisedAUsd >= SOFTCAP_AUSD) {
-            // SoftCap reached
-            // ToDo Governance becomes owner of CrowdSale
-            // to let Governance finish fundraising process
             transferOwnership(address(gov));
-            gov.proxyClaimOwnership(address(this)); // Todo maybe claimOwnership from gov?
+            gov.proxyClaimOwnership(address(this));
             gov.makeVotable();
             state = State.PostSoftCap;
             return;
         }
         if (now >= SOFTCAP_DEADLINE) {
-            // SoftCap deadline moment reached.
-            // ToDo switch Governance to refunding and selfdestruct
             gov.startRefunding();
             selfdestruct(msg.sender);
         }
@@ -238,7 +227,6 @@ contract CrowdSale is Claimable, ProxyClaimable {
     view
     returns (uint256)
     {
-        // ToDo change to interface
         uint256 tokenDecimals = ERC20Detailed(org.token()).decimals();
         uint256 decDivider = 10 ** (18 - tokenDecimals);
         uint256 baseTokens = aUsdAmount.mul(20).div(decDivider);

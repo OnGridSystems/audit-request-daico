@@ -27,7 +27,6 @@ contract Organization is Claimable {
 
     function addStableCoin(address _addr) public onlyOwner {
         require(!isStableCoin(_addr), "Already exists");
-        // ToDo check ERC-20 compliance
         stableCoins.push(_addr);
         _isStableCoin[_addr] = true;
         emit StableCoinAdded(_addr);
