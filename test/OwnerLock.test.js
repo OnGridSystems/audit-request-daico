@@ -1,8 +1,6 @@
 // const { assertRevert, shouldFail } = require('./helpers/assertRevert');
-const { BN, constants } = require('openzeppelin-test-helpers');
-const { ZERO_ADDRESS } = constants;
+const { BN } = require('openzeppelin-test-helpers');
 
-const Tap = artifacts.require('Tap');
 const Fund = artifacts.require('Fund');
 const Organization = artifacts.require('Organization');
 const StableCoin = artifacts.require('StableCoin');
@@ -36,18 +34,17 @@ contract('CrowdSale full behavior', function (accounts) {
   const admin = accounts[0];
   const contributorAcct = accounts[2];
   describe('with contracts stack', async function () {
-    let dai, fund, token, org, cs, tap, gov;
+    let dai, fund, token, org, cs, gov;
     beforeEach(async function () {
       token = await Token.new();
       org = await Organization.new('TestOrganisation', token.address, admin);
       fund = await Fund.new(org.address, 'TestFund');
       // ToDo the first arg of tap should be spender = gov
-      tap = await Tap.new(ZERO_ADDRESS, fund.address, new BN(0), 'SpendingTap');
       gov = await Gov.new(fund.address, token.address); // ToDo change after Gov refactoring
       dai = await StableCoin.new(contributorAcct, new BN('1000000'), 'DAI');
       await dai.setDecimals(18);
       await org.addStableCoin(dai.address);
-      cs = await CS.new(org.address, gov.address, tap.address, fund.address, webPlatformAcct);
+      cs = await CS.new(org.address, gov.address, fund.address, webPlatformAcct);
     });
 
     it('Lock', async function () {

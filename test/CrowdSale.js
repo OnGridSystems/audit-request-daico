@@ -4,7 +4,6 @@ const { ZERO_ADDRESS } = constants;
 const USD = new BN('1000000000000000000');
 const TKN = new BN('100000000');
 
-const Tap = artifacts.require('Tap');
 const Fund = artifacts.require('Fund');
 const Organization = artifacts.require('Organization');
 const StableCoin = artifacts.require('StableCoin');
@@ -12,6 +11,8 @@ const Token = artifacts.require('ProjectToken');
 const Gov = artifacts.require('Governance'); // ToDo change to Governance after impl
 const CS = artifacts.require('CrowdSale');
 const ContributorRelay = artifacts.require('ContributorRelay');
+const CrowdSaleStateMock = artifacts.require('CrowdSaleStateMock');
+const GovernanceStateMock = artifacts.require('GovernanceStateMock');
 
 contract('ContributorRelay isolated', function (accounts) {
   const contributorAcct = accounts[1];
@@ -43,24 +44,25 @@ contract('CrowdSale full behavior', function (accounts) {
   const contributorAcct = accounts[2];
   const newWebPlatformAcct = accounts[3];
   describe('with contracts stack', async function () {
-    let dai, usdc, fund, token, org, cs, tap, gov;
+    let dai, usdc, fund, token, org, cs, gov;
     beforeEach(async function () {
       token = await Token.new();
       org = await Organization.new('TestOrganisation', token.address, admin);
       fund = await Fund.new(org.address, 'TestFund');
       // ToDo the first arg of tap should be spender = gov
-      tap = await Tap.new(ZERO_ADDRESS, fund.address, new BN(0), 'SpendingTap');
       gov = await Gov.new(fund.address, token.address); // ToDo change after Gov refactoring
       dai = await StableCoin.new(contributorAcct, (new BN('100000')).mul(USD), 'DAI');
       await dai.setDecimals(18);
       usdc = await StableCoin.new(contributorAcct, new BN('1000000'), 'USDC');
       await usdc.setDecimals(6);
       await org.addStableCoin(dai.address);
-      cs = await CS.new(org.address, gov.address, tap.address, fund.address, webPlatformAcct);
+      cs = await CS.new(org.address, gov.address, fund.address, webPlatformAcct);
       await gov.transferOwnership(cs.address);
       await cs.proxyClaimOwnership(gov.address);
       await token.transferOwnership(cs.address);
       await cs.proxyClaimOwnership(token.address);
+      await cs.transferOwnership(gov.address);
+      await gov.proxyClaimOwnership(cs.address);
     });
 
     it('check CrowdSale vars and consts', async function () {
@@ -71,17 +73,14 @@ contract('CrowdSale full behavior', function (accounts) {
       await cs.MIN_CONTRIB_AUSD();
       await cs.raisedAUsd();
       await cs.softCapReached();
-      await cs.running();
       await cs.webPlatformAcct();
       await cs.org();
       await cs.gov();
-      await cs.refundTap();
     });
 
     it('check CrowdSale functions', async function () {
-      await cs.newContributorRelay(ZERO_ADDRESS);
       await cs.start();
-      await cs.finish();
+      await cs.newContributorRelay(ZERO_ADDRESS);
       await cs.tryToSwitchState();
       await cs.convertStcAmountToAUsd(dai.address, new BN(1000000));
     });
@@ -139,6 +138,7 @@ contract('CrowdSale full behavior', function (accounts) {
     describe('with ContributorRelay', async function () {
       let cr;
       beforeEach(async function () {
+        await cs.start();
         const { logs } = await cs.newContributorRelay(contributorAcct);
         const crAddr = logs[0].args.contributorRelay;
         cr = await ContributorRelay.at(crAddr);
@@ -167,6 +167,7 @@ contract('CrowdSale full behavior', function (accounts) {
     describe('processContribution checks', async function () {
       let cr1;
       beforeEach(async function () {
+        await cs.start();
         const { logs } = await cs.newContributorRelay(contributorAcct);
         const crAddr = logs[0].args.contributorRelay;
         cr1 = await ContributorRelay.at(crAddr);
@@ -244,6 +245,135 @@ contract('CrowdSale full behavior', function (accounts) {
         await assertRevert(cs.setWebPlatformAcct(newWebPlatformAcct, { from: contributorAcct }));
         owner = await cs.webPlatformAcct();
         assert(owner, webPlatformAcct);
+      });
+    });
+  });
+});
+
+// Test the behavior of mutual CrowdSale and Governance contract states
+contract('CrowdSale and Governance Automata', function (accounts) {
+  let cs, gov;
+  const csInit = new BN('0');
+  const csPreSoftCap = new BN('1');
+  const csPostSoftCap = new BN('2');
+  const csGovContribution = new BN('0');
+  // const csGovRefunding = new BN('1'); ToDo test refunding
+  const csGovVotable = new BN('2');
+  // form the mutual ownership relation (Crowdsale owns Governance)
+  beforeEach(async function () {
+    gov = await GovernanceStateMock.new();
+    cs = await CrowdSaleStateMock.new(gov.address);
+    await gov.transferOwnership(cs.address);
+    await cs.transferOwnership(gov.address);
+    (await cs.pendingOwner()).should.equal(gov.address);
+    await gov.proxyClaimOwnership(cs.address);
+    // (await cs.owner()).should.equal(gov.address); fixme DAICO-174
+    await cs.proxyClaimOwnership(gov.address);
+  });
+  // Check CrowdSale.gov is the Governance's address
+  // and the owner of Governance is CrowdSale
+  it('check relations', async function () {
+    (await cs.gov()).should.equal(gov.address);
+    (await gov.owner()).should.equal(cs.address);
+    // (await cs.owner()).should.equal(gov.address); fixme DAICO-174
+  });
+  // Init is the configuration-only mode. Crowdsale is not operational
+  // and doesn't accept contributions
+  describe('when CS in Init', async function () {
+    beforeEach(async function () {
+      await cs.setInitState();
+      (await cs.state()).should.be.bignumber.equal(csInit);
+    });
+    it('setWebPlatformAcct should work', async function () {
+      await cs.setWebPlatformAcct(accounts[8]);
+      (await cs.webPlatformAcct()).should.equal(accounts[8]);
+    });
+    it('newContributorRelay shouldn\'t work', async function () {
+      await assertRevert(cs.newContributorRelay(accounts[8]));
+    });
+    // ToDo processContribution shouldn\'t work
+    it('should be startable', async function () {
+      await cs.start();
+      (await cs.state()).should.be.bignumber.equal(csPreSoftCap);
+    });
+    it('finish should revert', async function () {
+      await assertRevert(cs.finish());
+    });
+    it('tryToSwitchState should revert', async function () {
+      await assertRevert(cs.tryToSwitchState());
+    });
+  });
+  // PreSoftCap: Crowdsale is operational and accepts contributions, but
+  // softCap is not reached yet
+  describe('when CS in PreSoftCap and Gov in Contribution', async function () {
+    beforeEach(async function () {
+      await cs.setPreSoftCapState();
+      (await cs.state()).should.be.bignumber.equal(csPreSoftCap);
+      (await gov.state()).should.be.bignumber.equal(csGovContribution);
+    });
+    it('setWebPlatformAcct should revert', async function () {
+      await assertRevert(cs.setWebPlatformAcct(accounts[8]));
+    });
+    // ToDo newContributorRelay should work
+    // ToDo processContribution should work
+    // ToDo ReachSoftCap
+    it('shouldn\'t be startable', async function () {
+      await assertRevert(cs.start());
+    });
+    it('finish should revert', async function () {
+      await assertRevert(cs.finish());
+    });
+    it('tryToSwitchState should have no effect', async function () {
+      await cs.tryToSwitchState();
+      (await cs.state()).should.be.bignumber.equal(csPreSoftCap);
+    });
+    describe('after SOFTcap reached', async function () {
+      beforeEach(async function () {
+        const softcapAUSD = await cs.SOFTCAP_AUSD();
+        await cs.setraisedAUsd(softcapAUSD);
+      });
+      it('tryToSwitchState should change state to PostSoftCap', async function () {
+        await cs.tryToSwitchState();
+        (await cs.state()).should.be.bignumber.equal(csPostSoftCap);
+        (await gov.state()).should.be.bignumber.equal(csGovVotable);
+        // ToDo (await cs.owner()).should.equal(gov.address); fixme DAICO-174
+      });
+    });
+    // ToDo add deadline reach tests
+  });
+  // PostSoftCap: Crowdsale is operational and accepts contributions, softCap
+  // has been reached
+  describe('when CS in PostSoftCap', async function () {
+    beforeEach(async function () {
+      await cs.setPostSoftCapState();
+      (await cs.state()).should.be.bignumber.equal(csPostSoftCap);
+    });
+    it('setWebPlatformAcct should revert', async function () {
+      await assertRevert(cs.setWebPlatformAcct(accounts[8]));
+    });
+    // ToDo newContributorRelay should work
+    // ToDo processContribution should work
+    // ToDo ReachHardCap
+    it('shouldn\'t be startable', async function () {
+      await assertRevert(cs.start());
+    });
+    it('finish should selfdestruct', async function () {
+      await cs.finish();
+    });
+    it('tryToSwitchState should have no effect', async function () {
+      await cs.tryToSwitchState();
+      (await cs.state()).should.be.bignumber.equal(csPostSoftCap);
+    });
+    describe('after HARDcap reached', async function () {
+      beforeEach(async function () {
+        const hardcapAUSD = await cs.HARDCAP_AUSD();
+        await cs.setraisedAUsd(hardcapAUSD);
+      });
+      it('tryToSwitchState should suicide', async function () {
+        await cs.tryToSwitchState();
+        // ToDo Test Crowdsale was selfdestructed
+        // ToDo add ownership checks
+        // ToDo add governance checks
       });
     });
   });

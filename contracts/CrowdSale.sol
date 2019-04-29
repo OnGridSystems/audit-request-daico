@@ -79,7 +79,7 @@ contract CrowdSale is Claimable, ProxyClaimable {
     uint256 constant public SOFTCAP_AUSD = 3000000 * USD; // 3M USD
     uint256 constant public SOFTCAP_DEADLINE = 1999999999; // ToDo need clarification
     uint256 constant public HARDCAP_AUSD = 10000000 * USD; // 10M USD
-    uint256 constant public HARDCAP_DEADLINE = 1999999999; // ToDo need clarification
+    uint256 constant public HARDCAP_DEADLINE = 2999999999; // ToDo need clarification
     uint256 constant public MIN_CONTRIB = 100000;
     uint256 constant public MIN_CONTRIB_AUSD = MIN_CONTRIB * USD; // 100K USD
     // amount of raised funds (the sum of all contributed stablecoins)
@@ -87,7 +87,8 @@ contract CrowdSale is Claimable, ProxyClaimable {
     bool public softCapReached; // true if softCap reached
     // if running==true the CrowdSale is active and able to process contributions
     // otherwise it's in configuration mode and should be start()'ed
-    bool public running;
+    enum State { Init, PreSoftCap, PostSoftCap }
+    State public state = State.Init;
     // the Externally Owned Account of webservice
     address public webPlatformAcct; 
     // Organization contract keeps the token address and the list of allowed stablecoins
@@ -96,7 +97,6 @@ contract CrowdSale is Claimable, ProxyClaimable {
     //Fund collecting contributor's stablecoins on its balance
     address public stcFund;
     // The tap connected to stcFund. Used in Refunding process
-    address public refundTap;
 
     event ContributorRelayDeployed(address contributorRelay);
 
@@ -104,21 +104,20 @@ contract CrowdSale is Claimable, ProxyClaimable {
     * @dev Constructor
     * @param _org address of Organization contract.
     * @param _gov address of Governance contract
-    * @param _refundTap address of tap connected to refundable Tap
     */
-    constructor (IOrg _org, Governance _gov, address _refundTap, address _stcFund, address _webPlatformAcct) public {
+    constructor (IOrg _org, Governance _gov, address _stcFund, address _webPlatformAcct) public {
         org = _org;
         gov = _gov;
         stcFund = _stcFund;
-        refundTap = _refundTap; // ToDo: should be configured implicitly as stcFund.tap
         webPlatformAcct = _webPlatformAcct;
     }
 
     /**
-    * @dev set Backend account address.
+    * @dev set Backend account address during initial configuration
     * @param _webPlatformAcct address Address to be set as Backend account address.
     */
     function setWebPlatformAcct(address _webPlatformAcct) public onlyOwner {
+        require(state == State.Init);
         webPlatformAcct = _webPlatformAcct;
     }
 
@@ -128,6 +127,7 @@ contract CrowdSale is Claimable, ProxyClaimable {
     * @return bool operation result.
     */
     function newContributorRelay(address _contributorAcct) public {
+        require(state != State.Init);
         address contributorRelay = address(new ContributorRelay(_contributorAcct));
         emit ContributorRelayDeployed(contributorRelay);
     }
@@ -144,6 +144,7 @@ contract CrowdSale is Claimable, ProxyClaimable {
         uint256 _stcAmount
     )
     public returns (bool) {
+        require(state != State.Init);
         require(msg.sender == webPlatformAcct || msg.sender == _contributorRelay.contributorAcct());
         require(org.isStableCoin(_stcAddr), "Not a stablecoin");
         require(_stcAmount >= MIN_CONTRIB);
@@ -157,22 +158,26 @@ contract CrowdSale is Claimable, ProxyClaimable {
         // Register contribution in Governance contract
         address contributorAcct = _contributorRelay.contributorAcct();
         bool result = gov.registerContribution(contributorAcct, _stcAddr, _stcAmount, tokens);
+        // ToDo tryToSwitchState
         return result;
     }
 
     /**
-    * @dev Finishes configuration and starts the CrowdSale
+    * @dev Finishes configuration and starts the CrowdSale.
+    * Executed by admin once after configuration complete
     */
-    function start() public pure { // solhint-disable-line no-empty-blocks
-
+    function start() public onlyOwner {
+        require(state == State.Init);
+        state = State.PreSoftCap;
     }
 
     /**
-    * @dev Prematurely finish the CrowdSale. 
-    * The CrowdSale contract will be finally destroyed
+    * @dev the owner (governance) can finish the CrowdSale prematurely
+    * (only after SoftCap raised)
     */
-    function finish() public pure { // solhint-disable-line no-empty-blocks
-
+    function finish() public onlyOwner {
+        require(state == State.PostSoftCap);
+        selfdestruct(msg.sender);
     }
 
     /**
@@ -180,8 +185,33 @@ contract CrowdSale is Claimable, ProxyClaimable {
     * It made public intentionally to make state transition autonomous
     * (anybody can try to initiate it from any account)
     */
-    function tryToSwitchState() public pure { // solhint-disable-line no-empty-blocks
-
+    function tryToSwitchState() public {
+        require(state != State.Init);
+        if (raisedAUsd >= HARDCAP_AUSD || now >= HARDCAP_DEADLINE) {
+            // HardCap reached.
+            // ToDo transfer token
+            // Todo finalize governance (withdrawals tokens from governance will be possible)
+            transferOwnership(address(gov));
+            gov.proxyClaimOwnership(address(this)); // Todo maybe claimOwnership from gov?
+            gov.makeVotable();
+            selfdestruct(msg.sender);
+        }
+        if (raisedAUsd >= SOFTCAP_AUSD) {
+            // SoftCap reached
+            // ToDo Governance becomes owner of CrowdSale
+            // to let Governance finish fundraising process
+            transferOwnership(address(gov));
+            gov.proxyClaimOwnership(address(this)); // Todo maybe claimOwnership from gov?
+            gov.makeVotable();
+            state = State.PostSoftCap;
+            return;
+        }
+        if (now >= SOFTCAP_DEADLINE) {
+            // SoftCap deadline moment reached.
+            // ToDo switch Governance to refunding and selfdestruct
+            gov.startRefunding();
+            selfdestruct(msg.sender);
+        }
     }
 
     /**

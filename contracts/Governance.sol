@@ -10,10 +10,23 @@ contract Governance is Claimable {
 
     IFund public fund;
     ERC20Detailed public token;
-    address public refundTap;
+    
+    enum State {
+        /* Contribution - stablecoins get processed and forwarded to fund,
+        * tokens get minted and owner (CrowdSale) registers contributions.*/
+        Contribution,
 
-    enum State {Waiting, Votable, Refunding}
-    State public state = State.Waiting;
+        /* Refunding - deposited stablecoins can be withdrawn by contributors
+        and project tokens (kept on Governance's balance) get burnt */
+        Refunding,
+
+        /* Votable - in this state Governance is operational,
+        * project tokens can be withdrawn from the Governance
+        * (decreasing voter's power).*/
+        Votable
+    }
+    
+    State public state = State.Contribution;
 
     mapping(bytes32 => Poll) public polls;
 
@@ -84,13 +97,22 @@ contract Governance is Claimable {
         return votedTokens > (totalTokens.div(2));
     }
 
+    /**
+    * @dev Activate governance and allow tokenholders to vote.
+    * Called by CrowdSale contract if softcap achieved
+    */
     function makeVotable() public onlyOwner {
-        require(state == State.Waiting);
+        require(state == State.Contribution);
         state = State.Votable;
     }
 
+    /**
+    * @dev start refunding deposited stablecoins back to investors.
+    * Called by CrowdSale contract if softcap not achieved and softCap 
+    * deadline date passed.
+    */
     function startRefunding() public onlyOwner {
-        require(state == State.Waiting);
+        require(state == State.Contribution);
         state = State.Refunding;
     }
 
@@ -109,6 +131,7 @@ contract Governance is Claimable {
 
     /**
     * @dev withdraw tokens from Governance balance to investor personal account and decrease his voting power.this
+    * @param _to address destination address to send token
     * @param amount uint256 Amount of tokens to withdraw.
     */
     function withdrawToken(address _to, uint256 amount) public {
@@ -130,6 +153,7 @@ contract Governance is Claimable {
     */
     function registerContribution(address contributorAcc, address stc, uint256 stcAmount, uint256 tokens) public
     onlyOwner returns (bool) {
+        require(state == State.Contribution);
         contributions[contributorAcc][stc].stableCoinAmount =
         contributions[contributorAcc][stc].stableCoinAmount.add(stcAmount);
         contributions[contributorAcc][stc].tokenAmount = contributions[contributorAcc][stc].tokenAmount.add(tokens);
@@ -167,6 +191,7 @@ contract Governance is Claimable {
      * @param agree True if user endorses the proposal else False
      */
     function vote(bytes32 _pollHash, bool agree) public onlyFundHolder pollActual(_pollHash) {
+        require(state == State.Votable);
         require(polls[_pollHash].voter[msg.sender].time == 0);
         uint256 voiceTokens = fund.balanceOf(msg.sender);
         if (agree) {
@@ -183,6 +208,7 @@ contract Governance is Claimable {
     * @dev Revoke user`s vote
     */
     function revokeVote(bytes32 _pollHash) public pollActual(_pollHash) {
+        require(state == State.Votable);
         require(polls[_pollHash].voter[msg.sender].time > 0);
         uint256 voiceTokens = polls[_pollHash].voter[msg.sender].tokens;
         bool agree = polls[_pollHash].voter[msg.sender].agree;
@@ -200,6 +226,7 @@ contract Governance is Claimable {
      * Finalize poll and call onPollFinish callback with result
      */
     function tryToFinalize(bytes32 _pollHash) public onlyFundHolder returns (bool) {
+        require(state == State.Votable);
         require(!polls[_pollHash].finished);
         if (now < polls[_pollHash].endTime) {
             return false;
